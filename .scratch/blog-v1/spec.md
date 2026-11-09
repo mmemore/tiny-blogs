@@ -53,13 +53,13 @@ Spec: .scratch/blog-v1/spec.md
 - **数据模型**：
   - `users`：id、username、password_hash、token_version
   - `refresh_tokens`：id、user_id、token_hash、expires_at、revoked_at（轮换与重放检测依据）
-  - `posts`：id、title、slug（唯一索引）、summary、content_md、cover_url、status（draft/published）、published_at、updated_at；title/summary/content_md 上建 **ngram 全文索引**（中文检索必需）
+  - `posts`：id、title、slug（唯一索引）、summary、content_md、cover_url、status（draft/published）、published_at、updated_at、**author_id（外键 → users.id，建索引）**；title/summary/content_md 上建 **ngram 全文索引**（中文检索必需）。v1 只有一行管理员用户，`author_id` 是为 v2 邀请制多作者预留的低成本保险：现在加字段为零成本，事后加则是一次带数据迁移风险的 schema 变更。`author_id` 同时进入所有写接口的归属校验（管理员只能改自己的文章）。
   - `tags`：id、name（唯一）、slug
   - `post_tags`：post_id + tag_id 联合主键
 - **API 契约**（v1）：
   - 公开：`GET /api/health`、`GET /api/posts`（分页 + tag/q 过滤）、`GET /api/posts/:slug`、`GET /api/tags`、`GET /api/archives`（按年月聚合）
   - 鉴权：`POST /api/auth/login`、`POST /api/auth/refresh`、`POST /api/auth/logout`、`GET /api/auth/me`
-  - 管理（JWT Guard）：`GET/POST/PUT/DELETE /api/admin/posts`（含草稿）、`GET/POST/PUT/DELETE /api/admin/tags`、`POST /api/admin/upload`、`GET /api/admin/export`（JSON 全量导出，供备份与构建共用）
+  - 管理（JWT Guard，写操作均做归属校验）：`GET/POST/PUT/DELETE /api/admin/posts`（含草稿）、`GET/POST/PUT/DELETE /api/admin/tags`、`POST /api/admin/upload`、`GET /api/admin/export`（JSON 全量导出，供备份与构建共用）
   - 构建：`GET /api/build/export?token=...`（服务间 token，供 vite-ssg 构建期拉取全部已发布数据）
 - **Markdown 渲染位置**：API 只存 Markdown；HTML 渲发生在前端（预渲染期与客户端同一套 markdown-it/unified 管线，含代码高亮），保证构建产物与运行时一致。
 - **图片存储**：`StorageService` 抽象（save/delete/getUrl），v1 实现为本地卷（挂载目录由 API 静态服务）；上传走 multipart，按内容 hash 命名防重复，限制类型与大小。
@@ -75,7 +75,8 @@ Spec: .scratch/blog-v1/spec.md
 - 好的测试只验证外部行为（HTTP 状态码、响应结构、副作用），不断言内部实现。
 - **唯一的重缝：API 的 HTTP 边界**。用 supertest 起完整 Nest 应用打真实接口，数据库用 compose.dev.yml 的 MySQL（独立 schema，测试前清空）。覆盖：
   - 鉴权全流程：登录成功/失败、access 过期后 refresh、refresh 轮换、旧 refresh 重放触发全部会话撤销、token_version 提升后旧 token 拒绝、限流生效
-  - 文章 CRUD：草稿对公开接口不可见、slug 唯一冲突、发布/更新时间语义
+  - 文章 CRUD：草稿对公开接口不可见、slug 唯一冲突、发布/更新时间语义、创建时 `author_id` 取当前登录用户
+  - 归属校验：用第二个用户 fixture 验证非作者修改/删除他人文章返回 403（v1 单管理员也要测，防止 v2 加人时才暴露漏洞）
   - 导出接口：token 正确返回全量、token 错误 401
   - 中文全文搜索：ngram 命中（断言中文关键词能搜到）
 - **前端轻缝：构建冒烟**。`pnpm build` 成功 + 关键页面 dist HTML 存在 + 文章页 `<title>`/OG meta 正确。不做运行时组件测试（v1 范围外）。
@@ -87,7 +88,7 @@ Spec: .scratch/blog-v1/spec.md
 - 评论功能的实际接入（仅 Giscus 占位，仓库转 public 后启用）
 - 项目展示页、友链页（v2）
 - 浏览量统计（v2）
-- 多用户注册（鉴权为单管理员种子）
+- 多用户注册、邀请制多作者、RBAC 角色体系（v1 为单管理员种子账号；`posts.author_id` 与归属校验已预留，见 Implementation Decisions）
 - CI/CD 流水线、服务器部署、域名与 HTTPS、生产 compose 编排
 - RSS/订阅、邮件通知、暗色模式切换（暗色可由 Tailwind 预留样式变量，v1 只做亮色）
 - 国际化（v1 仅中文界面）
@@ -97,4 +98,5 @@ Spec: .scratch/blog-v1/spec.md
 - 中文全文检索依赖 MySQL ngram parser，建索引时必须显式 `WITH PARSER ngram`，否则中文搜索无效——这是容易被面试官问到的细节。
 - "发布后可见"存在约 1 分钟延迟（全量重建），对个人博客可接受；spec 不承诺实时。
 - 域术语以 `GLOSSARY.md` 为准（Post/发布/导出/全量重建等），后续 issue 与代码命名不得漂移。
+- 多作者不是 v1 目标：个人博客开放写作会变成内容平台（注册治理、审核流、图片配额、UGC 合规），与"求职作品集"目标冲突。唯一保留的形态是 **邀请制多作者 + RBAC 模块**，且必须在权限设计有独立测试覆盖时才做。v1 只落 `author_id` 这一层保险。
 - 架构决策背景见 `docs/adr/0001`–`0005`。
