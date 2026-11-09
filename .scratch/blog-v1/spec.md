@@ -53,7 +53,7 @@ Spec: .scratch/blog-v1/spec.md
 - **数据模型**：
   - `users`：id、username、password_hash、token_version
   - `refresh_tokens`：id、user_id、token_hash、expires_at、revoked_at（轮换与重放检测依据）
-  - `posts`：id、title、slug（唯一索引）、summary、content_md、cover_url、status（draft/published）、published_at、updated_at、**author_id（外键 → users.id，建索引）**；title/summary/content_md 上建 **ngram 全文索引**（中文检索必需）。v1 只有一行管理员用户，`author_id` 是为 v2 邀请制多作者预留的低成本保险：现在加字段为零成本，事后加则是一次带数据迁移风险的 schema 变更。`author_id` 同时进入所有写接口的归属校验（管理员只能改自己的文章）。
+  - `posts`：id、title、slug（唯一索引）、summary、content_md、status（draft/published）、**published_seq（唯一，首次发布时分配且永久不变，派生曲目号/彩胶配色）**、published_at、updated_at、**author_id（外键 → users.id，建索引）**；title/summary/content_md 上建 **ngram 全文索引**（中文检索必需）。v1 只有一行管理员用户，`author_id` 是为 v2 邀请制多作者预留的低成本保险：现在加字段为零成本，事后加则是一次带数据迁移风险的 schema 变更。`author_id` 同时进入所有写接口的归属校验（管理员只能改自己的文章）。**无 `cover_url`**：设计稿的封面是生成的彩胶视觉，正文插图仍走上传（见 `docs/design/fields-and-interfaces.md` §1）。
   - `tags`：id、name（唯一）、slug
   - `post_tags`：post_id + tag_id 联合主键
 - **API 契约**（v1）：
