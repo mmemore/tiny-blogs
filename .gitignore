@@ -29,3 +29,6 @@ Thumbs.db
 
 # Agent workspace (session-local data, not part of the product)
 .workbuddy/
+
+# One-off exploratory artifacts: prototype screens are throwaway, not the product
+.scratch/**/prototype/

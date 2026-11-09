@@ -256,3 +256,4 @@ type ContentSnapshot = {
 | 列表页"年份筛选"UI | 设计稿 tools 区只有一个搜索框 | 先只做搜索，年份筛选留到需要时 |
 | 浏览量 | 需要写路径与防刷 | v2，用 `POST /api/posts/:slug/view` + 日粒度去重 |
 | `ContentSnapshot` 缓存失效 | 构建重复拉全量 | 快照量小（<1MB），先不做 ETag |
+| 字体来源 | 设计稿从 Google Fonts 引 Archivo / Noto Sans SC / Space Mono，国内访问不稳且首屏会闪 | 实施时改为构建期自托管并按 `unicode-range` 做子集，禁止线上直连 fonts.googleapis.com |
