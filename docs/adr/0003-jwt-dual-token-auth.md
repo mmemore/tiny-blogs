@@ -6,7 +6,7 @@ Accepted（2026-11-09）
 
 ## Context
 
-后台为单管理员（种子账号，无注册）。更简单的方案是服务端 session cookie；作者明确需要 JWT 以支撑面试叙事与未来多用户扩展。
+后台为单管理员（种子账号，无注册）。更简单的方案是服务端 session cookie；本项目选择 JWT，是为多客户端（网页后台、将来的移动端/CLI）与后续多用户扩展保留空间，并借 `token_version` 补回 session 方案天然具备的"强制下线"能力。
 
 ## Decision
 

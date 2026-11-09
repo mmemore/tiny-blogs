@@ -15,7 +15,7 @@
 | 发布构建 | Release build | `pnpm release` 触发的链路：拉导出数据 → vite-ssg 预渲染 → 产出 `dist`。 |
 | 预渲染 | Prerender | 构建期把路由渲染成静态 HTML（vite-ssg），区别于运行时 SSR。 |
 | 存储服务 | StorageService | 图片读写的抽象接口（save/delete/getUrl）；v1 实现为本地卷。 |
-| 访客 | Visitor | 未登录的任何前台读者，含招聘方。 |
+| 访客 | Visitor | 未登录的任何前台读者。 |
 | 构建导出令牌 | Build export token | 保护 `/api/build/export` 的服务间 token，与用户鉴权体系无关。 |
 | 曲目号 | Track / `toTrack()` | 由 `published_seq` 派生的展示编号（A1…B4）：含面、编号、目录号与配色。**只存在于展示层，不是字段。** |
 | 彩胶 | Accent | 四色轮换标识（v1 橘 / v2 蓝 / v3 绿 / v4 莓红），由序号取模得出。代码中禁止出现 vinyl/record 命名。 |
