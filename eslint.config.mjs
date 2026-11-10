@@ -55,4 +55,14 @@ export default tseslint.config(
       'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
   },
+  {
+    // Nest 的依赖注入依赖 `emitDecoratorMetadata`：构造函数参数的类型必须保持**值导入**，
+    // 否则 tsc 会把 `design:paramtypes` 退化成 `Object`，运行期注入变成 undefined。
+    // 所以 API 包关闭"强制 type-only 导入"这条规则；其余包继续启用。
+    // 注意：flat config 是后者覆盖前者，这个块必须放在通用规则块之后。
+    files: ['apps/api/**/*.ts'],
+    rules: {
+      '@typescript-eslint/consistent-type-imports': 'off',
+    },
+  },
 );

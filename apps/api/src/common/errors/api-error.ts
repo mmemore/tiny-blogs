@@ -31,13 +31,23 @@ export class ApiError extends HttpException {
     return new ApiError('NOT_FOUND', message, HttpStatus.NOT_FOUND);
   }
 
-  /** 400：入参校验失败。 */
-  static validationFailed(message = '请求参数不合法'): ApiError {
-    return new ApiError('VALIDATION_FAILED', message, HttpStatus.BAD_REQUEST);
+  /** 401：未认证或凭证无效。 */
+  static unauthorized(message = '未认证或凭证已失效'): ApiError {
+    return new ApiError('UNAUTHORIZED', message, HttpStatus.UNAUTHORIZED);
   }
 
-  /** 409：唯一性冲突或乐观锁冲突。 */
-  static conflict(message = '资源冲突'): ApiError {
-    return new ApiError('CONFLICT', message, HttpStatus.CONFLICT);
+  /** 403：已认证但无权操作。 */
+  static forbidden(message = '无权操作该资源'): ApiError {
+    return new ApiError('FORBIDDEN', message, HttpStatus.FORBIDDEN);
+  }
+
+  /** 422：入参校验失败。 */
+  static validationFailed(message = '请求参数不合法'): ApiError {
+    return new ApiError('VALIDATION_FAILED', message, HttpStatus.UNPROCESSABLE_ENTITY);
+  }
+
+  /** 409：通用冲突。 */
+  static conflict(message = '资源冲突', code: ApiErrorCode = 'CONFLICT'): ApiError {
+    return new ApiError(code, message, HttpStatus.CONFLICT);
   }
 }

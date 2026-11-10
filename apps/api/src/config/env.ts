@@ -34,13 +34,24 @@ export interface DatabaseEnv {
   readonly password: string;
 }
 
-/** 鉴权相关配置（票 03 使用；此处先完成校验，避免后续新增变量时漏配）。 */
+/** JWT 与 access token 相关配置。 */
 export interface JwtEnv {
   readonly secret: string;
   /** access token 有效期，形如 `15m` / `900s` / `1h`。 */
   readonly accessTokenTtl: string;
+  /** access token 有效期的秒数（由 `accessTokenTtl` 解析而来，签发时直接用它）。 */
+  readonly accessTokenTtlSeconds: number;
   /** refresh token 有效期（天）。 */
   readonly refreshTokenTtlDays: number;
+}
+
+/** 鉴权模块配置：JWT + 登录限流。 */
+export interface AuthEnv {
+  readonly jwt: JwtEnv;
+  /** 登录接口同一 IP 在窗口内允许的次数。 */
+  readonly loginRateLimit: number;
+  /** 登录限流窗口（毫秒）。 */
+  readonly loginRateWindowMs: number;
 }
 
 /** 种子管理员凭据。口令只用于首次建号，永不写日志。 */
@@ -68,7 +79,7 @@ export interface ApiEnv {
   readonly isTest: boolean;
   readonly apiPort: number;
   readonly database: DatabaseEnv;
-  readonly jwt: JwtEnv;
+  readonly auth: AuthEnv;
   readonly admin: AdminEnv;
   readonly buildExport: BuildExportEnv;
   readonly upload: UploadEnv;
@@ -167,6 +178,23 @@ function readInt(source: RawEnvSource, name: string, rule: IntRule, problems: st
 }
 
 /**
+ * 把 `ACCESS_TOKEN_TTL` 这类时长字符串解析成秒数。
+ *
+ * @param ttl 形如 `15m` / `900s` / `1h` / `2d` 的时长串（格式已由 `readString` 校验）。
+ * @returns 秒数；格式异常时返回 0（调用方此时已经在校验问题列表里）。
+ */
+function parseTtlSeconds(ttl: string): number {
+  const matched = /^(\d+)([smhd])$/.exec(ttl);
+  if (matched === null) {
+    return 0;
+  }
+  const amount = Number(matched[1]);
+  const unit = matched[2];
+  const multiplier = unit === 's' ? 1 : unit === 'm' ? 60 : unit === 'h' ? 3600 : 86_400;
+  return amount * multiplier;
+}
+
+/**
  * 校验并组装 API 配置。
  *
  * @param source 原始环境变量表，默认 `process.env`。
@@ -192,14 +220,29 @@ export function readApiEnv(source: RawEnvSource = process.env): ApiEnv {
     password: readString(source, 'DB_PASSWORD', { secret: true }, problems),
   };
 
+  const accessTokenTtl = readString(source, 'ACCESS_TOKEN_TTL', {
+    fallback: '15m',
+    pattern: /^\d+[smhd]$/,
+    hint: '例如 15m、900s、1h',
+  }, problems);
+
   const jwt: JwtEnv = {
     secret: readString(source, 'JWT_SECRET', { secret: true, minLength: 32 }, problems),
-    accessTokenTtl: readString(source, 'ACCESS_TOKEN_TTL', {
-      fallback: '15m',
-      pattern: /^\d+[smhd]$/,
-      hint: '例如 15m、900s、1h',
-    }, problems),
+    accessTokenTtl,
+    accessTokenTtlSeconds: parseTtlSeconds(accessTokenTtl),
     refreshTokenTtlDays: readInt(source, 'REFRESH_TOKEN_TTL_DAYS', { fallback: 30, min: 1, max: 365 }, problems),
+  };
+
+  // 登录限流窗口可调：生产用 5 次/分钟，测试里调高以免互相污染（见 ticket 03）。
+  const auth: AuthEnv = {
+    jwt,
+    loginRateLimit: readInt(source, 'AUTH_LOGIN_RATE_LIMIT', { fallback: 5, min: 1, max: 100_000 }, problems),
+    loginRateWindowMs: readInt(
+      source,
+      'AUTH_LOGIN_RATE_WINDOW_MS',
+      { fallback: 60_000, min: 1_000, max: 3_600_000 },
+      problems,
+    ),
   };
 
   const admin: AdminEnv = {
@@ -231,7 +274,7 @@ export function readApiEnv(source: RawEnvSource = process.env): ApiEnv {
     isTest: nodeEnv === 'test',
     apiPort,
     database: Object.freeze(database),
-    jwt: Object.freeze(jwt),
+    auth: Object.freeze(auth),
     admin: Object.freeze(admin),
     buildExport: Object.freeze(buildExport),
     upload: Object.freeze(upload),

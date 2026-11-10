@@ -16,7 +16,8 @@ const STATUS_TO_CODE: Readonly<Record<number, ApiErrorCode>> = {
   403: 'FORBIDDEN',
   404: 'NOT_FOUND',
   409: 'CONFLICT',
-  429: 'VALIDATION_FAILED',
+  422: 'VALIDATION_FAILED',
+  429: 'RATE_LIMITED',
 };
 
 /** 5xx 对外统一文案：不把内部实现、SQL、连接串泄漏给调用方。 */
@@ -84,6 +85,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
   private resolveMessage(status: number, exception: unknown): string {
     if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
       return INTERNAL_ERROR_MESSAGE;
+    }
+    if (status === HttpStatus.TOO_MANY_REQUESTS) {
+      // ThrottlerException 自带的英文文案（"ThrottlerException: Too Many Requests"）不适合直接外露。
+      return '请求过于频繁，请稍后再试';
     }
 
     const payload = this.extractPayload(exception);

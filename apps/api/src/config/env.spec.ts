@@ -30,8 +30,11 @@ describe('readApiEnv', () => {
       user: 'tiny_blogs',
       password: 'unit-test-password',
     });
-    expect(env.jwt.accessTokenTtl).toBe('15m');
-    expect(env.jwt.refreshTokenTtlDays).toBe(30);
+    expect(env.auth.jwt.accessTokenTtl).toBe('15m');
+    expect(env.auth.jwt.accessTokenTtlSeconds).toBe(900);
+    expect(env.auth.jwt.refreshTokenTtlDays).toBe(30);
+    expect(env.auth.loginRateLimit).toBe(5);
+    expect(env.auth.loginRateWindowMs).toBe(60_000);
     expect(env.upload.maxBytes).toBe(5_242_880);
     expect(env.buildExport.url).toBe('http://127.0.0.1:3001/api/build/export');
   });

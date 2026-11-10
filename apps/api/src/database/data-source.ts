@@ -26,6 +26,10 @@ export function createDataSourceOptions(env: ApiEnv): DataSourceOptions {
     charset: 'utf8mb4',
     // 表里的 datetime 语义是 UTC；驱动层负责与 JS Date 互转。
     timezone: 'Z',
+    // TypeORM 默认把 BIGINT 读成字符串。契约把 id 定义为 number（PostRecord.id / Principal.id），
+    // 而自增主键远小于 2^53，所以这里显式关掉大数转字符串，避免 JSON 里出现 "1"。
+    supportBigNumbers: false,
+    bigNumberStrings: false,
     // NEVER true. 这一行是纪律，不是默认值。
     synchronize: false,
     migrationsRun: false,

@@ -3,13 +3,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ApiConfigModule } from './config/config.module';
 import type { ApiEnv } from './config/env';
 import { createDataSourceOptions } from './database/data-source';
+import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
 
 /**
  * 根模块。用 `forRoot(env)` 而不是在模块里读 `process.env`：
  * 配置在 `main.ts` 里一次性校验完成，模块只接受校验后的对象。
- *
- * 后续票（03 鉴权、04 写侧、05 读侧）在这里追加 `AuthModule` / `AdminModule` / `ContentModule`。
  */
 @Module({})
 export class AppModule {
@@ -22,8 +21,15 @@ export class AppModule {
       module: AppModule,
       imports: [
         ApiConfigModule.forRoot(env),
-        TypeOrmModule.forRoot(createDataSourceOptions(env)),
+        TypeOrmModule.forRoot({
+          ...createDataSourceOptions(env),
+          // 实体由各业务模块 `forFeature` 登记，避免在这里维护一份手工清单。
+          autoLoadEntities: true,
+          // 测试里快速失败，比默认的重试 10 次更容易定位问题。
+          retryAttempts: env.isTest ? 1 : 10,
+        }),
         HealthModule,
+        AuthModule.forRoot(env),
       ],
     };
   }

@@ -1,10 +1,10 @@
 import 'reflect-metadata';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DataSource } from 'typeorm';
 import { API_PREFIX } from '@tiny-blogs/shared';
 import { AppModule } from './app.module';
-import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { configureApp } from './app.setup';
 import { loadEnvFile } from './config/dotenv';
 import { EnvValidationError, readApiEnv } from './config/env';
 import { ensureAdminUser } from './database/ensure-admin';
@@ -29,15 +29,7 @@ async function bootstrap(): Promise<void> {
   const env = readApiEnv();
 
   const app = await NestFactory.create(AppModule.forRoot(env));
-  app.setGlobalPrefix(API_PREFIX);
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
-  app.useGlobalFilters(new AllExceptionsFilter());
+  configureApp(app);
   app.enableShutdownHooks();
 
   const dataSource = app.get(DataSource);
