@@ -6,8 +6,8 @@
 
 **Status:** ready-for-agent
 
-- [ ] 迁移在空库上创建 users / refresh_tokens / posts / tags / post_tags，字段与索引和 `docs/design/fields-and-interfaces.md` §2 一致（含 `published_seq` 唯一、`author_id` 外键、`status` 复合索引、`FULLTEXT ... WITH PARSER ngram`）
-- [ ] TypeORM `synchronize` 恒为 false；迁移文件全部入库可审计
-- [ ] 首次启动按环境变量创建管理员（argon2id 哈希）；口令不写入任何日志
-- [ ] 迁移幂等：重复执行不报错；删库重跑后 schema 一致
-- [ ] 无 `cover_url`、无 `featured` 字段（契约 §1 的删减生效）
+- [x] 迁移在空库上创建 users / refresh_tokens / posts / tags / post_tags，字段与索引和 `docs/design/fields-and-interfaces.md` §2 一致（含 `published_seq` 唯一、`author_id` 外键、`status` 复合索引、`FULLTEXT ... WITH PARSER ngram`）
+- [x] TypeORM `synchronize` 恒为 false；迁移文件全部入库可审计
+- [x] 首次启动按环境变量创建管理员（argon2id 哈希）；口令不写入任何日志
+- [x] 迁移幂等：重复执行不报错；删库重跑后 schema 一致
+- [x] 无 `cover_url`、无 `featured` 字段（契约 §1 的删减生效）

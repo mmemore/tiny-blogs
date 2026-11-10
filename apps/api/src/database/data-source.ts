@@ -1,6 +1,7 @@
 import { join } from 'node:path';
-import { type DataSourceOptions } from 'typeorm';
-import type { ApiEnv } from '../config/env';
+import { DataSource, type DataSourceOptions } from 'typeorm';
+import { loadEnvFile } from '../config/dotenv';
+import { readApiEnv, type ApiEnv } from '../config/env';
 
 /**
  * 由校验后的配置构造 TypeORM 连接选项。
@@ -34,4 +35,16 @@ export function createDataSourceOptions(env: ApiEnv): DataSourceOptions {
     migrations: [join(__dirname, 'migrations', '*.{ts,js}')],
     migrationsTableName: 'migrations',
   };
+}
+
+/**
+ * 构造一个未初始化的数据源（供 CLI 脚本使用）。
+ *
+ * 会先加载仓库根目录的 `.env`，再校验环境变量。
+ *
+ * @returns 未初始化的 `DataSource`，调用方负责 `initialize()` / `destroy()`。
+ */
+export function createAppDataSource(): DataSource {
+  loadEnvFile();
+  return new DataSource(createDataSourceOptions(readApiEnv()));
 }

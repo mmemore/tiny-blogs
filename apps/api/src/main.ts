@@ -1,18 +1,21 @@
 import 'reflect-metadata';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { DataSource } from 'typeorm';
 import { API_PREFIX } from '@tiny-blogs/shared';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { loadEnvFile } from './config/dotenv';
 import { EnvValidationError, readApiEnv } from './config/env';
+import { ensureAdminUser } from './database/ensure-admin';
 
 /**
  * 启动流程（顺序即约束）：
  * 1. 加载 `.env`（不存在则忽略，视作由真实环境变量注入）；
  * 2. 校验环境变量 —— 缺失必需项立刻失败，错误信息只含变量名；
  * 3. 建 Nest 应用并挂全局前缀 / 校验管道 / 异常过滤器；
- * 4. 监听端口。
+ * 4. 确保管理员账号存在（幂等，口令不写日志）；
+ * 5. 监听端口。
  */
 async function bootstrap(): Promise<void> {
   const logger = new Logger('Bootstrap');
@@ -36,6 +39,18 @@ async function bootstrap(): Promise<void> {
   );
   app.useGlobalFilters(new AllExceptionsFilter());
   app.enableShutdownHooks();
+
+  const dataSource = app.get(DataSource);
+  const seedResult = await ensureAdminUser(dataSource, {
+    username: env.admin.username,
+    password: env.admin.password,
+  });
+  // 只打印用户名与结果，绝不打印口令或其哈希。
+  logger.log(
+    seedResult === 'created'
+      ? `种子管理员已创建：${env.admin.username}`
+      : `种子管理员已存在，跳过：${env.admin.username}`,
+  );
 
   await app.listen(env.apiPort);
   logger.log(`API 已启动：http://127.0.0.1:${env.apiPort}/${API_PREFIX}（${env.nodeEnv}）`);
