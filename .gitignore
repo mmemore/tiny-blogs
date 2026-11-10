@@ -16,6 +16,9 @@ build/
 *.log
 logs/
 
+# Local runtime artifacts (uploaded images live under UPLOAD_DIR, default ./var/uploads)
+var/
+
 # Test & coverage
 coverage/
 

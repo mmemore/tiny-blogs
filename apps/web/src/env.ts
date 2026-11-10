@@ -1,0 +1,40 @@
+/**
+ * 浏览器侧配置。
+ *
+ * 纪律（AGENTS.md）：只有 `VITE_` 前缀的变量会进浏览器产物，视同公开，
+ * 因此这里只允许放站点信息与公开的第三方配置，任何 secret 都不许出现。
+ */
+export interface GiscusConfig {
+  readonly repo: string;
+  readonly repoId: string;
+  readonly category: string;
+  readonly categoryId: string;
+}
+
+export interface WebEnv {
+  /** 站点对外地址，用于 OG/规范链接（预渲染期即需要）。 */
+  readonly siteUrl: string;
+  /** 评论占位配置；四项任一为空则不渲染（v1 默认不渲染）。 */
+  readonly giscus: GiscusConfig;
+}
+
+/**
+ * 读取并补齐前端配置。
+ *
+ * @param source Vite 注入的环境变量表。
+ * @returns 强类型配置；缺省值保证 v1 在没有任何额外配置时也能跑起来。
+ */
+export function readWebEnv(source: ImportMetaEnv = import.meta.env): WebEnv {
+  return {
+    siteUrl: source.VITE_SITE_URL ?? 'http://localhost:5173',
+    giscus: {
+      repo: source.VITE_GISCUS_REPO ?? '',
+      repoId: source.VITE_GISCUS_REPO_ID ?? '',
+      category: source.VITE_GISCUS_CATEGORY ?? '',
+      categoryId: source.VITE_GISCUS_CATEGORY_ID ?? '',
+    },
+  };
+}
+
+/** 全应用共用的前端配置实例。 */
+export const webEnv: WebEnv = readWebEnv();

@@ -1,0 +1,19 @@
+{
+  "name": "@tiny-blogs/shared",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Types, constants and pure derivation functions shared by the web app and the API.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "~5.7.2"
+  }
+}

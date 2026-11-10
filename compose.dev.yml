@@ -1,0 +1,55 @@
+# 开发环境编排：只起 MySQL 8 + Adminer。
+# web/api 在宿主机上直跑，保留 Vite HMR 与 Nest watch（见 ADR-0005）。
+#
+#   docker compose -f compose.dev.yml up -d
+#
+# 变量来自仓库根目录的 .env（compose 自动加载）。缺失关键变量时 compose 直接报错退出。
+name: tiny-blogs-dev
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: tiny-blogs-db
+    restart: unless-stopped
+    # 服务端统一用 UTF-8 与时区 UTC：表里的 datetime 语义是 UTC，
+    # API 侧（mysql2 timezone: 'Z'）负责与本地时间互转。
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --skip-name-resolve
+      - --default-time-zone=+00:00
+      - --ngram_token_size=2
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD 未设置，请从 .env.example 复制 .env}
+      MYSQL_DATABASE: ${DB_NAME:?DB_NAME 未设置}
+      MYSQL_USER: ${DB_USER:?DB_USER 未设置}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD 未设置}
+      TZ: UTC
+    ports:
+      - '${DB_PORT:-3306}:3306'
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -u root -p"$$MYSQL_ROOT_PASSWORD" --silent']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  adminer:
+    image: adminer:4
+    container_name: tiny-blogs-adminer
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+      ADMINER_DESIGN: nette
+    ports:
+      - '8080:8080'
+
+volumes:
+  # 命名卷：容器销毁重建后数据仍在（验收条件之一）。
+  db_data:
+    name: tiny-blogs-dev-db-data

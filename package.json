@@ -1,0 +1,35 @@
+{
+  "name": "tiny-blogs",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Personal full-stack blog: Vue 3 prerendered front end, NestJS API, MySQL 8.",
+  "packageManager": "pnpm@10.15.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @tiny-blogs/shared build && concurrently -k -n shared,api,web -c gray,blue,green \"pnpm --filter @tiny-blogs/shared dev\" \"pnpm --filter @tiny-blogs/api dev\" \"pnpm --filter @tiny-blogs/web dev\"",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint .",
+    "test": "pnpm -r --if-present test",
+    "db:up": "docker compose -f compose.dev.yml up -d --wait",
+    "db:down": "docker compose -f compose.dev.yml down",
+    "db:logs": "docker compose -f compose.dev.yml logs -f db",
+    "migration:run": "pnpm --filter @tiny-blogs/api migration:run",
+    "migration:revert": "pnpm --filter @tiny-blogs/api migration:revert",
+    "migration:show": "pnpm --filter @tiny-blogs/api migration:show",
+    "seed": "pnpm --filter @tiny-blogs/api seed",
+    "db:reset": "pnpm --filter @tiny-blogs/api db:reset",
+    "db:schema": "pnpm --filter @tiny-blogs/api db:schema"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "concurrently": "^9.1.0",
+    "eslint": "^9.17.0",
+    "eslint-plugin-vue": "^9.32.0",
+    "globals": "^15.14.0",
+    "typescript": "~5.7.2",
+    "typescript-eslint": "^8.18.0"
+  }
+}

@@ -1,0 +1,9 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+# pnpm 10 默认不执行依赖的构建脚本；这里只放行确实需要编译/下载二进制的包。
+onlyBuiltDependencies:
+  - '@nestjs/core'
+  - argon2
+  - esbuild
