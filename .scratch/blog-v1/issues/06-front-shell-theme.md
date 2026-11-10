@@ -6,10 +6,10 @@
 
 **Status:** ready-for-agent
 
-- [ ] Tailwind v4 + CSS 变量主题：暖白/墨/日晒橘 + 四色彩胶（v1 橘 / v2 蓝 / v3 绿 / v4 莓红），令牌单一定义，供后续 Naive `themeOverrides` 同源引用
-- [ ] 字体自托管子集（Archivo / Noto Sans SC / Space Mono），产物无 `fonts.googleapis.com` 直连，无 FOUT 闪烁
-- [ ] 站头（导航当前态）、页脚、响应式断点
-- [ ] 首页：hero 为最新一篇 + 曲目表（编号着色、时长）；列表页：分页与搜索（调公开 API）
-- [ ] 首页 hero 与列表对 `track` 的展示与 `toTrack` 派生值一致
-- [ ] 所有数据获取位于 setup/async 阶段（预渲染兼容纪律，票 10 的前提）
-- [ ] `pnpm build` 成功；admin 代码不在前台首屏 chunk
+- [x] Tailwind v4 + CSS 变量主题：暖白/墨/日晒橘 + 四色彩胶（v1 橘 / v2 蓝 / v3 绿 / v4 莓红），令牌单一定义，供后续 Naive `themeOverrides` 同源引用
+- [x] 字体自托管子集（Archivo / Noto Sans SC / Space Mono），产物无 `fonts.googleapis.com` 直连，无 FOUT 闪烁
+- [x] 站头（导航当前态）、页脚、响应式断点
+- [x] 首页：hero 为最新一篇 + 曲目表（编号着色、时长）；列表页：分页与搜索（调公开 API）
+- [x] 首页 hero 与列表对 `track` 的展示与 `toTrack` 派生值一致
+- [x] 所有数据获取位于 setup/async 阶段（预渲染兼容纪律，票 10 的前提）
+- [x] `pnpm build` 成功；admin 代码不在前台首屏 chunk
