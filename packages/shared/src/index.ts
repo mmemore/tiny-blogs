@@ -14,3 +14,4 @@ export * from './post-status';
 export * from './errors';
 export * from './identity';
 export * from './health';
+export * from './content';

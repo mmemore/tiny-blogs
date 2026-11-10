@@ -24,6 +24,8 @@ export type ApiErrorCode =
   | 'FORBIDDEN'
   | 'NOT_FOUND'
   | 'CONFLICT'
+  | 'SLUG_TAKEN'
+  | 'STALE_WRITE'
   | 'RATE_LIMITED'
   | 'INTERNAL_ERROR';
 

@@ -4,6 +4,7 @@ import { ApiConfigModule } from './config/config.module';
 import type { ApiEnv } from './config/env';
 import { createDataSourceOptions } from './database/data-source';
 import { AuthModule } from './modules/auth/auth.module';
+import { AuthoringModule } from './modules/authoring/authoring.module';
 import { HealthModule } from './modules/health/health.module';
 
 /**
@@ -30,6 +31,7 @@ export class AppModule {
         }),
         HealthModule,
         AuthModule.forRoot(env),
+        AuthoringModule,
       ],
     };
   }
