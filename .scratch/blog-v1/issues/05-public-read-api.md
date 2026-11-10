@@ -6,10 +6,10 @@
 
 **Status:** ready-for-agent
 
-- [ ] `GET /api/posts`：分页（默认 8/页）、tag、year 过滤；`q` 走 ngram 全文检索且中文关键词命中
-- [ ] 列表项含派生 `track` 与 `readingMinutes`；排序恒为 `published_at DESC, published_seq DESC`
-- [ ] `GET /api/posts/:slug`：返回 `html` + `headings` + prev/next；不返回 `contentMd`；草稿与不存在统一 404，不泄漏存在性
-- [ ] `GET /api/tags` 返回 count 聚合；`GET /api/archives` 按 年→月 聚合
-- [ ] 只返回 published 的不变量在模块内部实现，调用方代码不含 status 条件
-- [ ] 投影函数与导出快照共用（与票 10 的数据一致性由此保证）
-- [ ] supertest 覆盖以上路径，含"草稿不可见"与中文搜索命中两条关键断言
+- [x] `GET /api/posts`：分页（默认 8/页）、tag、year 过滤；`q` 走 ngram 全文检索且中文关键词命中
+- [x] 列表项含派生 `track` 与 `readingMinutes`；排序恒为 `published_at DESC, published_seq DESC`
+- [x] `GET /api/posts/:slug`：返回 `html` + `headings` + prev/next；不返回 `contentMd`；草稿与不存在统一 404，不泄漏存在性
+- [x] `GET /api/tags` 返回 count 聚合；`GET /api/archives` 按 年→月 聚合
+- [x] 只返回 published 的不变量在模块内部实现，调用方代码不含 status 条件
+- [x] 投影函数与导出快照共用（与票 10 的数据一致性由此保证）
+- [x] supertest 覆盖以上路径，含"草稿不可见"与中文搜索命中两条关键断言

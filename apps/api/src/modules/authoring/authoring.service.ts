@@ -14,6 +14,7 @@ import {
   type TagRef,
 } from '@tiny-blogs/shared';
 import { ApiError } from '../../common/errors/api-error';
+import { loadTagRefs, toIsoOrNull, toPostRecord } from '../content/post-mapping';
 import { PostEntity } from '../content/entities/post.entity';
 import { TagEntity } from '../content/entities/tag.entity';
 
@@ -79,7 +80,7 @@ export class AuthoringService {
 
       await this.replacePostTags(manager, postId, tagIds);
       const created = await this.loadPostOrFail(manager, input.slug);
-      return this.toPostRecord(created, await this.loadTagRefs(manager, [postId]));
+      return this.record(created, await loadTagRefs(manager, [postId]));
     });
   }
 
@@ -129,7 +130,7 @@ export class AuthoringService {
 
       await this.replacePostTags(manager, post.id, tagIds);
       const updated = await this.loadPostOrFail(manager, input.slug);
-      return this.toPostRecord(updated, await this.loadTagRefs(manager, [post.id]));
+      return this.record(updated, await loadTagRefs(manager, [post.id]));
     });
   }
 
@@ -157,7 +158,7 @@ export class AuthoringService {
 
           if (post.status === POST_STATUS.published) {
             // 幂等：已发布不再改动任何字段（编号与首次发布时间都不变）。
-            return this.toPostRecord(post, await this.loadTagRefs(manager, [post.id]));
+            return this.record(post, await loadTagRefs(manager, [post.id]));
           }
 
           const now = new Date();
@@ -170,7 +171,7 @@ export class AuthoringService {
           );
 
           const published = await this.loadPostOrFail(manager, slug);
-          return this.toPostRecord(published, await this.loadTagRefs(manager, [post.id]));
+          return this.record(published, await loadTagRefs(manager, [post.id]));
         });
       } catch (error) {
         // 两个并发发布同时算出了同一个序号：唯一索引会挡住，重算重试。
@@ -197,7 +198,7 @@ export class AuthoringService {
       this.assertOwnership(post, actor);
 
       if (post.status === POST_STATUS.draft) {
-        return this.toPostRecord(post, await this.loadTagRefs(manager, [post.id]));
+        return this.record(post, await loadTagRefs(manager, [post.id]));
       }
 
       await manager.query(`UPDATE posts SET status = ?, updated_at = ? WHERE id = ?`, [
@@ -207,7 +208,7 @@ export class AuthoringService {
       ]);
 
       const updated = await this.loadPostOrFail(manager, slug);
-      return this.toPostRecord(updated, await this.loadTagRefs(manager, [post.id]));
+      return this.record(updated, await loadTagRefs(manager, [post.id]));
     });
   }
 
@@ -252,7 +253,7 @@ export class AuthoringService {
       .take(query.pageSize)
       .getMany();
 
-    const tagMap = await this.loadTagRefs(this.dataSource.manager, rows.map((row) => row.id));
+    const tagMap = await loadTagRefs(this.dataSource.manager, rows.map((row) => row.id));
 
     return {
       items: rows.map((row) => this.toAdminListItem(row, tagMap)),
@@ -273,7 +274,7 @@ export class AuthoringService {
     if (post === null) {
       return null;
     }
-    const tagMap = await this.loadTagRefs(this.dataSource.manager, [post.id]);
+    const tagMap = await loadTagRefs(this.dataSource.manager, [post.id]);
     return {
       ...this.toAdminListItem(post, tagMap),
       contentMd: post.contentMd,
@@ -446,63 +447,16 @@ export class AuthoringService {
   }
 
   /**
-   * 批量读取文章标签。
+   * 实体 → 领域记录（标签从批量读取的映射里取）。
    *
-   * @param manager 事务/管理器。
-   * @param postIds 文章 id 列表。
-   * @returns postId → 标签列表。
-   */
-  private async loadTagRefs(
-    manager: EntityManager,
-    postIds: readonly number[],
-  ): Promise<Map<number, TagRef[]>> {
-    const result = new Map<number, TagRef[]>();
-    if (postIds.length === 0) {
-      return result;
-    }
-
-    const rows = await manager
-      .createQueryBuilder()
-      .select('pt.post_id', 'postId')
-      .addSelect('t.name', 'name')
-      .addSelect('t.slug', 'slug')
-      .from('post_tags', 'pt')
-      .innerJoin('tags', 't', 't.id = pt.tag_id')
-      .where('pt.post_id IN (:...postIds)', { postIds: [...postIds] })
-      .orderBy('t.name', 'ASC')
-      .getRawMany<{ postId: number | string; name: string; slug: string }>();
-
-    for (const row of rows) {
-      const postId = Number(row.postId);
-      const list = result.get(postId) ?? [];
-      list.push({ name: row.name, slug: row.slug });
-      result.set(postId, list);
-    }
-
-    return result;
-  }
-
-  /**
-   * 实体 → 领域记录。
+   * 投影本身在 `content/post-mapping` 里，读侧写侧共用同一份，避免两处时间格式分叉。
    *
    * @param post 文章实体。
    * @param tagMap 标签映射。
    * @returns `PostRecord`（时间为 ISO 字符串）。
    */
-  private toPostRecord(post: PostEntity, tagMap: Map<number, TagRef[]>): PostRecord {
-    return {
-      id: post.id,
-      authorId: post.authorId,
-      title: post.title,
-      slug: post.slug,
-      summary: post.summary,
-      contentMd: post.contentMd,
-      status: post.status,
-      publishedSeq: post.publishedSeq,
-      publishedAt: toIsoOrNull(post.publishedAt),
-      updatedAt: post.updatedAt.toISOString(),
-      tags: tagMap.get(post.id) ?? [],
-    };
+  private record(post: PostEntity, tagMap: Map<number, TagRef[]>): PostRecord {
+    return toPostRecord(post, tagMap.get(post.id) ?? []);
   }
 
   /**
@@ -553,16 +507,6 @@ export class AuthoringService {
     }
     return error;
   }
-}
-
-/**
- * Date → ISO 字符串（null 透传）。
- *
- * @param value 时间或 null。
- * @returns ISO 8601 字符串或 null。
- */
-function toIsoOrNull(value: Date | null): string | null {
-  return value === null ? null : value.toISOString();
 }
 
 /**

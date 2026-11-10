@@ -15,3 +15,5 @@ export * from './errors';
 export * from './identity';
 export * from './health';
 export * from './content';
+export * from './markdown';
+export * from './content-view';
