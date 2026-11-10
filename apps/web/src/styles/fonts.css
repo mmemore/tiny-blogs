@@ -1,0 +1,36 @@
+/*
+ * 字体：全部自托管（`@fontsource` 只提供 woff2/woff 文件与 `@font-face` 规则），
+ * 产物里不会出现 `fonts.googleapis.com` / `fonts.gstatic.com` 之类的直连。
+ *
+ * 选型与子集:
+ * - Archivo 700 / 900：只取 latin 子集，用于品牌字与数据标注（`EST. 2026 · 8 PRESSINGS`）。
+ *   中文标题会自然回落到 Noto Sans SC，这也是设计稿的意图（拉丁字形 + 中文黑体）。
+ * - Space Mono 400 / 700：曲目号、`CAT.` 行、目录编号。带上 latin-ext，
+ *   因为 `33⅓ RPM` 里的「⅓」（U+2153）落在 ext 区间，缺了它会掉进系统字体，观感不一致。
+ * - Noto Sans SC Variable：正文与界面。变体字体按 `unicode-range` 切成上百片，
+ *   浏览器只下载当前页面真正命中的那几片（每片约 60 KB），首次访问不会吞下整个中文包。
+ *
+ * 为什么不在 `index.html` 里 preload 首屏 woff2：
+ * 中文分片是按「页面出现了哪些字」命中的，构建期无法预知读者会打开哪一页，
+ * 预加载猜错等于白下一次；拉丁字体只有一个文件，用 `font-display: swap` +
+ * 下面那个度量匹配的兜底字体承接，字体到达时不会出现跳行（这是"无 FOUT 闪烁"的做法）。
+ */
+@import '@fontsource/archivo/latin-700.css';
+@import '@fontsource/archivo/latin-900.css';
+@import '@fontsource/space-mono/400.css';
+@import '@fontsource/space-mono/700.css';
+@import '@fontsource-variable/noto-sans-sc/index.css';
+
+/*
+ * Archivo 的度量兜底：系统 Arial 与 Archivo 的 x-height / 行高不同，
+ * 直接用 Arial 会让 `swap` 那一刻标题行高跳动。这里把度量拉到接近 Archivo，
+ * 字体换上前后占位高度基本一致。
+ */
+@font-face {
+  font-family: 'Archivo Fallback';
+  src: local('Arial'), local('Helvetica Neue'), local('Liberation Sans');
+  size-adjust: 100%;
+  ascent-override: 90%;
+  descent-override: 22%;
+  line-gap-override: 0%;
+}

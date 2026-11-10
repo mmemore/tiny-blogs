@@ -1,0 +1,48 @@
+/*
+ * 主题令牌：**全站唯一一处定义**（视觉方向 06 · 彩胶俱乐部）。
+ *
+ * 纪律：
+ * - 只有这里允许出现十六进制色值；组件与其它样式文件一律 `var(--color-*)`。
+ * - Tailwind v4 的 `@theme` 会把每个令牌同时导出成 `:root` 上的 CSS 变量，
+ *   因此后续接入 Naive UI 时 `themeOverrides` 直接引用 `var(--color-accent)` 即可，
+ *   两边永远同源，不会出现"组件库主色和站点主色差一点点"。
+ * - 颜色归属见 `design/v6/index.html` 00 屏：彩胶四色只属于文章（曲目号、胶体、标识），
+ *   界面元素只用墨与日晒橘。
+ */
+@import 'tailwindcss';
+
+@theme {
+  /* 纸与墨 */
+  --color-bg: #f3f1e9;
+  --color-paper: #ffffff;
+  --color-ink: #232428;
+  --color-body: #3e3f44;
+  --color-dim: #6b6c72;
+  --color-faint: #98999e;
+  --color-line: #e5e3da;
+  --color-line2: #c9c9bf;
+
+  /* 日晒橘：界面唯一的强调色 */
+  --color-accent: #e0693f;
+  --color-accent-dark: #af4e28;
+
+  /* 彩胶四色：只用于曲目号、胶体、文章标识 */
+  --color-v1: #e0693f;
+  --color-v2: #4a6db5;
+  --color-v3: #44907a;
+  --color-v4: #c75777;
+
+  /* 记号笔：只进标题层 */
+  --color-mark: #f2d679;
+
+  --font-display: 'Archivo', 'Archivo Fallback', 'Noto Sans SC Variable', 'PingFang SC', 'Microsoft YaHei',
+    sans-serif;
+  --font-sans: 'Noto Sans SC Variable', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', -apple-system,
+    sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+  --font-hand: 'Kaiti SC', STKaiti, 'KaiTi', cursive;
+
+  /* 「物」才有投影：封套、唱片、贴纸、胶囊按钮 */
+  --shadow-ink: 6px 6px 0 var(--color-ink);
+  --shadow-ink-sm: 3px 3px 0 var(--color-ink);
+}

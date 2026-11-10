@@ -8,6 +8,8 @@ interface ImportMetaEnv {
   readonly VITE_API_BASE?: string;
   /** 站点对外地址。 */
   readonly VITE_SITE_URL?: string;
+  /** 仓库地址；留空则站脚的仓库链接只显示为文字（不产生死链）。 */
+  readonly VITE_SITE_REPO_URL?: string;
   readonly VITE_GISCUS_REPO?: string;
   readonly VITE_GISCUS_REPO_ID?: string;
   readonly VITE_GISCUS_CATEGORY?: string;

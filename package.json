@@ -20,6 +20,7 @@
     "migration:revert": "pnpm --filter @tiny-blogs/api migration:revert",
     "migration:show": "pnpm --filter @tiny-blogs/api migration:show",
     "seed": "pnpm --filter @tiny-blogs/api seed",
+    "seed:demo": "pnpm --filter @tiny-blogs/api seed:demo",
     "db:reset": "pnpm --filter @tiny-blogs/api db:reset",
     "db:schema": "pnpm --filter @tiny-blogs/api db:schema"
   },

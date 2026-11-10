@@ -1,0 +1,11 @@
+/*
+ * 样式入口：令牌 → 字体 → 基础 → 壳层 → 物件 → 阅读页。
+ *
+ * 拆成多个文件只是为了可读；对外仍是一个入口，顺序有意义（令牌必须最先求值）。
+ */
+@import './tokens.css';
+@import './fonts.css';
+@import './base.css';
+@import './shell.css';
+@import './vinyl.css';
+@import './prose.css';

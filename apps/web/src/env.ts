@@ -38,3 +38,22 @@ export function readWebEnv(source: ImportMetaEnv = import.meta.env): WebEnv {
 
 /** 全应用共用的前端配置实例。 */
 export const webEnv: WebEnv = readWebEnv();
+
+/**
+ * 评论位是否可用。
+ *
+ * 票 07 的要求是"配置项为空则整块不渲染"——不是渲染一个空容器再隐藏。
+ * 因此这个判断要在**模板层**用（`v-if`），而不是挂载后再 `display: none`：
+ * 后者会让预渲染产物里留下一个空壳，读者看到一条多余的横线。
+ *
+ * @param config 评论配置。
+ * @returns 四项都非空才返回 true。
+ */
+export function isGiscusConfigured(config: GiscusConfig): boolean {
+  return (
+    config.repo.trim() !== '' &&
+    config.repoId.trim() !== '' &&
+    config.category.trim() !== '' &&
+    config.categoryId.trim() !== ''
+  );
+}

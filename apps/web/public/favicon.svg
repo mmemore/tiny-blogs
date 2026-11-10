@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!--
+    站点图标：一张彩胶唱片（与首页/详情页的 VinylDisc 同一套视觉）。
+    颜色是令牌值的快照：墨 #232428 · 日晒橘 #E0693F · 纸白 #FFFFFF。
+    SVG 的 favicon 不走构建管线，无法引用 CSS 变量，因此这里允许出现十六进制值
+    （tokens.css 仍是唯一权威来源，改动时需同步这一份快照）。
+  -->
+  <circle cx="16" cy="16" r="15" fill="#E0693F" stroke="#232428" stroke-width="2" />
+  <circle cx="16" cy="16" r="10.5" fill="none" stroke="#232428" stroke-width="0.8" opacity="0.35" />
+  <circle cx="16" cy="16" r="6.5" fill="#FFFFFF" stroke="#232428" stroke-width="1.6" />
+  <circle cx="16" cy="16" r="1.8" fill="#232428" />
+</svg>

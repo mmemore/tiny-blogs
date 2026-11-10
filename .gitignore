@@ -33,5 +33,10 @@ Thumbs.db
 # Agent workspace (session-local data, not part of the product)
 .workbuddy/
 
+# QA session artifacts (screenshots / browser session state) — session-local, not the product
+qa-shots/
+.playwright-cli/
+_tmp_*
+
 # One-off exploratory artifacts: prototype screens are throwaway, not the product
 .scratch/**/prototype/

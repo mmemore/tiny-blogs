@@ -3,11 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      `<title>` 与 description 的最终值由 `usePageMeta`（@unhead/vue）在路由渲染时写入，
+      这里的值只是"JS 还没跑"的兜底；预渲染（票 10）会把真实值直接写进产物 HTML。
+    -->
     <title>tiny-blogs</title>
-    <meta name="description" content="一个自带写作后台、构建期预渲染的个人博客。" />
+    <meta name="description" content="一个自带写作后台的个人博客：Vue 3 预渲染前台 + NestJS API + MySQL。" />
+    <meta name="color-scheme" content="light" />
+    <meta name="format-detection" content="telephone=no" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
   <body>
     <div id="app"></div>
+    <noscript>本站是 Vue 3 单页应用，需要开启 JavaScript 才能浏览；文章内容在关闭脚本时不可见。</noscript>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
