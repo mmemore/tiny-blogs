@@ -132,12 +132,29 @@ export const useContentStore = defineStore('content', () => {
     return page.total;
   }
 
+  /**
+   * 清空全部公开缓存。
+   *
+   * 后台的写操作（发布 / 取消发布 / 删除）会改变公开侧的结果，
+   * 但公开缓存是按参数键存在这个 store 里的，后台无从知道哪些键失效。
+   * 与其猜，不如整体作废：读者下一次进入页面时重新取一份，
+   * 而"刚改完就回前台看"正是最需要看到新状态的时刻。
+   */
+  function invalidate(): void {
+    lists.value = {};
+    details.value = {};
+    tags.value = null;
+    archive.value = null;
+    publishedTotal.value = null;
+  }
+
   return {
     lists,
     details,
     tags,
     archive,
     publishedTotal,
+    invalidate,
     loadList,
     loadDetail,
     loadTags,

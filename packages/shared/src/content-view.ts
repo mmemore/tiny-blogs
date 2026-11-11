@@ -108,6 +108,14 @@ export const DEFAULT_PAGE_SIZE = 8;
 export const MAX_PAGE_SIZE = 24;
 
 /**
+ * 后台列表默认每页条数。
+ *
+ * 与公开列表的 8 不同：读者是"一页看完一段"，编辑是"扫一遍找那篇"，
+ * 所以后台一屏放 20 条；上限仍是后端的 100（见 `AdminPostQueryDto`）。
+ */
+export const DEFAULT_ADMIN_PAGE_SIZE = 20;
+
+/**
  * 站点默认元信息。
  *
  * v1 只有一个站点，不引配置项；票 10（预渲染与发布链路）接入 `SITE_*` 环境变量时

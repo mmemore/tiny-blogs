@@ -17,3 +17,4 @@ export * from './health';
 export * from './content';
 export * from './markdown';
 export * from './content-view';
+export * from './upload';

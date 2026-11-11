@@ -6,8 +6,8 @@
 
 **Status:** ready-for-agent
 
-- [ ] 登录页：凭证错误与限流 429 都有明确反馈；access 只存内存（Pinia），不落 localStorage、不写 cookie
-- [ ] access 过期时自动调用 refresh 后重放原请求；刷新失败跳登录页
-- [ ] 文章管理列表：含草稿（状态列可区分）、搜索、分页，调管理接口
-- [ ] Naive UI 仅在 `/admin` 路由 chunk 按需加载；`themeOverrides` 引用共享主题令牌，与前台观感一致
-- [ ] 退出登录清除会话并跳回前台
+- [x] 登录页：凭证错误与限流 429 都有明确反馈；access 只存内存（Pinia），不落 localStorage、不写 cookie
+- [x] access 过期时自动调用 refresh 后重放原请求；刷新失败跳登录页
+- [x] 文章管理列表：含草稿（状态列可区分）、搜索、分页，调管理接口
+- [x] Naive UI 仅在 `/admin` 路由 chunk 按需加载；`themeOverrides` 引用共享主题令牌，与前台观感一致
+- [x] 退出登录清除会话并跳回前台

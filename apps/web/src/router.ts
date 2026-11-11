@@ -7,14 +7,26 @@
  * - 关于页虽然是前台页面，但也懒加载：它是唯一会把 `markdown-it` 拖进 chunk 的页面
  *   （正文来自本地 Markdown），不能让它占用主包；
  * - 兜底路由放在最后，保证未知路径有 404 而不是白屏。
+ *
+ * 守卫纪律（票 08）：鉴权判定放在**路由层**而不是组件 `onMounted`。
+ * 后者的问题不是"多了几行"，而是页面在拿到结论前已经渲染过一帧——
+ * 未登录的访客会先看见后台骨架再被弹走，中间那一帧还可能发起真实的后台请求。
  */
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
+import { createRouter, createWebHistory, type RouteLocationNormalized, type RouteRecordRaw } from 'vue-router';
+import { registerExpiredHandler } from './api/session';
 import ArchivesView from './views/ArchivesView.vue';
 import HomeView from './views/HomeView.vue';
 import NotFoundView from './views/NotFoundView.vue';
 import PostDetailView from './views/PostDetailView.vue';
 import PostListView from './views/PostListView.vue';
 import TagsView from './views/TagsView.vue';
+import { useSessionStore } from './stores/auth';
+
+/** 登录页路由名（守卫与"会话失效"跳转共用，避免到处写字面量）。 */
+export const LOGIN_ROUTE = 'admin-login';
+
+/** 后台列表路由名（登录成功后的默认落点）。 */
+export const ADMIN_HOME_ROUTE = 'admin-posts';
 
 const routes: RouteRecordRaw[] = [
   { path: '/', name: 'home', component: HomeView },
@@ -31,10 +43,46 @@ const routes: RouteRecordRaw[] = [
     component: () => import('./views/AboutView.vue'),
   },
   {
+    path: '/admin/login',
+    name: LOGIN_ROUTE,
+    // 懒加载 + `naive-ui` 只在这条子树里出现，前台入口 chunk 不会带上组件库。
+    component: () => import('./views/admin/AdminLoginView.vue'),
+    meta: { guestOnly: true },
+  },
+  {
     path: '/admin',
-    name: 'admin',
-    // 懒加载：后台代码（后续会引入 Naive UI）不能进前台首屏 chunk。
-    component: () => import('./views/AdminPlaceholderView.vue'),
+    // 后台骨架（侧栏 + 面包屑）挂在父路由上，列表与标签页共用。
+    component: () => import('./views/admin/AdminShellView.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      { path: '', redirect: { name: ADMIN_HOME_ROUTE } },
+      {
+        path: 'posts',
+        name: ADMIN_HOME_ROUTE,
+        component: () => import('./views/admin/AdminPostsView.vue'),
+      },
+      {
+        path: 'tags',
+        name: 'admin-tags',
+        component: () => import('./views/admin/AdminTagsView.vue'),
+      },
+    ],
+  },
+  /**
+   * 编辑器是**全幅**页面（设计稿 10 屏没有侧栏），因此从骨架路由里提出来单列。
+   * 新建与编辑共用一个组件，靠 `slug` 参数区分。
+   */
+  {
+    path: '/admin/posts/new',
+    name: 'admin-post-new',
+    component: () => import('./views/admin/AdminEditorView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/admin/posts/:slug/edit',
+    name: 'admin-post-edit',
+    component: () => import('./views/admin/AdminEditorView.vue'),
+    meta: { requiresAuth: true },
   },
   { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView },
 ];
@@ -60,3 +108,50 @@ export const router = createRouter({
     return { top: 0 };
   },
 });
+
+/**
+ * 把当前地址塞进 `redirect` 查询参数，登录后原地返回。
+ *
+ * @param to 被拦截的目标路由。
+ * @returns 登录页的位置。
+ */
+function toLogin(to: RouteLocationNormalized): { name: string; query: Record<string, string> } {
+  const redirect = to.fullPath.startsWith('/admin') ? to.fullPath : '/admin/posts';
+  return { name: LOGIN_ROUTE, query: { redirect } };
+}
+
+router.beforeEach(async (to) => {
+  const needsAuth = to.matched.some((record) => record.meta.requiresAuth === true);
+  const guestOnly = to.matched.some((record) => record.meta.guestOnly === true);
+  if (!needsAuth && !guestOnly) {
+    return true;
+  }
+
+  const session = useSessionStore();
+  const signedIn = await session.ensureSession();
+
+  if (needsAuth && !signedIn) {
+    return toLogin(to);
+  }
+  if (guestOnly && signedIn) {
+    return { name: ADMIN_HOME_ROUTE };
+  }
+  return true;
+});
+
+// 会话在页面使用期间失效（refresh 也救不回来）时，由 API 层通知到这里统一跳转。
+registerExpiredHandler(setSessionExpired);
+
+/**
+ * 清掉 store 里的会话并跳登录页（当前已在登录页时不再跳，免得刷屏）。
+ */
+function setSessionExpired(): void {
+  const session = useSessionStore();
+  session.clear();
+
+  const current = router.currentRoute.value;
+  if (current.name === LOGIN_ROUTE) {
+    return;
+  }
+  void router.replace(toLogin(current));
+}

@@ -13,6 +13,8 @@
  * - `SLUG_TAKEN`：文章 slug 已被占用（HTTP 409）。
  * - `STALE_WRITE`：`expectedUpdatedAt` 与库中 `updated_at` 不一致，乐观锁拒绝覆盖（HTTP 409）。
  * - `RATE_LIMITED`：触发限流（HTTP 429）。
+ * - `FILE_TOO_LARGE`：上传文件超过 `UPLOAD_MAX_BYTES`（HTTP 422）。
+ * - `UNSUPPORTED_MEDIA_TYPE`：上传文件不在图片白名单内（HTTP 422）。
  * - `INTERNAL_ERROR`：未预期异常（HTTP 500）。
  */
 export type ApiErrorCode =
@@ -27,6 +29,8 @@ export type ApiErrorCode =
   | 'SLUG_TAKEN'
   | 'STALE_WRITE'
   | 'RATE_LIMITED'
+  | 'FILE_TOO_LARGE'
+  | 'UNSUPPORTED_MEDIA_TYPE'
   | 'INTERNAL_ERROR';
 
 /** 统一错误响应信封。 */

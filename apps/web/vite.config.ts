@@ -51,6 +51,18 @@ export default defineConfig(({ mode }) => {
           target: proxy.origin,
           changeOrigin: true,
         },
+        /**
+         * `/uploads/**` 也要代理到 API。
+         *
+         * 上传接口返回的是**站内相对路径**（`/uploads/2026/11/ab12cd34.png`），
+         * 而静态服务挂在 API 进程上、且故意不在 `/api` 前缀下（图片 URL 不该带 API 版本语义）。
+         * 不代理这一条，开发时后台上传成功、预览图全是 404。
+         * 生产由反向代理把这两个前缀一起转给 API（见 ADR-0005）。
+         */
+        '/uploads': {
+          target: proxy.origin,
+          changeOrigin: true,
+        },
       },
     },
     build: {
@@ -79,6 +91,14 @@ export default defineConfig(({ mode }) => {
            */
           manualChunks: {
             contract: ['@tiny-blogs/shared'],
+            /**
+             * 后台组件库单独成块。
+             *
+             * 它只被 `/admin` 子树（懒加载路由）引用，切出来之后：
+             * 1. 前台入口 chunk 里不会出现 `naive-ui` 的任何字节（构建后可直接 grep 断言）；
+             * 2. 后台各页面之间共享同一份组件库，不会每个页面各背一份。
+             */
+            admin: ['naive-ui'],
           },
         },
       },
