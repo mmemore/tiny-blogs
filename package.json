@@ -22,7 +22,9 @@
     "seed": "pnpm --filter @tiny-blogs/api seed",
     "seed:demo": "pnpm --filter @tiny-blogs/api seed:demo",
     "db:reset": "pnpm --filter @tiny-blogs/api db:reset",
-    "db:schema": "pnpm --filter @tiny-blogs/api db:schema"
+    "db:schema": "pnpm --filter @tiny-blogs/api db:schema",
+    "release": "node scripts/release.mjs",
+    "smoke": "node scripts/smoke.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

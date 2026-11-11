@@ -12,7 +12,13 @@
  * 后者的问题不是"多了几行"，而是页面在拿到结论前已经渲染过一帧——
  * 未登录的访客会先看见后台骨架再被弹走，中间那一帧还可能发起真实的后台请求。
  */
-import { createRouter, createWebHistory, type RouteLocationNormalized, type RouteRecordRaw } from 'vue-router';
+import {
+  createRouter,
+  createWebHistory,
+  type RouteLocationNormalized,
+  type Router,
+  type RouteRecordRaw,
+} from 'vue-router';
 import { registerExpiredHandler } from './api/session';
 import ArchivesView from './views/ArchivesView.vue';
 import HomeView from './views/HomeView.vue';
@@ -28,7 +34,8 @@ export const LOGIN_ROUTE = 'admin-login';
 /** 后台列表路由名（登录成功后的默认落点）。 */
 export const ADMIN_HOME_ROUTE = 'admin-posts';
 
-const routes: RouteRecordRaw[] = [
+/** 全量路由表（客户端运行时使用；预渲染渲染哪些页由 `prerender-routes.ts` 单独决定）。 */
+export const routes: RouteRecordRaw[] = [
   { path: '/', name: 'home', component: HomeView },
   { path: '/posts', name: 'posts', component: PostListView },
   { path: '/posts/:slug', name: 'post', component: PostDetailView },
@@ -87,27 +94,72 @@ const routes: RouteRecordRaw[] = [
   { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView },
 ];
 
-export const router = createRouter({
-  history: createWebHistory(),
-  routes,
-  /**
-   * 滚动行为：浏览器前进/后退还原位置，锚点跳转留出站头高度，其余回到顶部。
-   *
-   * @param to 目标路由。
-   * @param _from 来源路由（未使用）。
-   * @param savedPosition 浏览器记录的位置。
-   * @returns 滚动目标。
-   */
-  scrollBehavior(to, _from, savedPosition) {
-    if (savedPosition !== null) {
-      return savedPosition;
+/**
+ * 创建路由实例。
+ *
+ * 为什么改成工厂而不是导出单例：vite-ssg 的预渲染对每一页调用一次 `createApp(route)`，
+ * 共用一个路由单例会让多页互相串状态（当前路由、滚动位置）。
+ * 浏览器里仍然是一页一个实例，行为不变。
+ *
+ * @param history 历史模式：浏览器传 `createWebHistory()`；
+ *   预渲染不需要传（vite-ssg 内部用 memory history 自建）。
+ * @returns 挂好守卫的路由实例。
+ */
+export function createAppRouter(history?: ReturnType<typeof createWebHistory>): Router {
+  const router = createRouter({
+    history: history ?? createWebHistory(),
+    routes,
+    /**
+     * 滚动行为：浏览器前进/后退还原位置，锚点跳转留出站头高度，其余回到顶部。
+     *
+     * @param to 目标路由。
+     * @param _from 来源路由（未使用）。
+     * @param savedPosition 浏览器记录的位置。
+     * @returns 滚动目标。
+     */
+    scrollBehavior(to, _from, savedPosition) {
+      if (savedPosition !== null) {
+        return savedPosition;
+      }
+      if (to.hash !== '') {
+        return { el: to.hash, top: 96, behavior: 'smooth' };
+      }
+      return { top: 0 };
+    },
+  });
+
+  attachGuards(router);
+  return router;
+}
+
+/**
+ * 挂上全局守卫与「会话失效」处理。
+ *
+ * @param router 目标路由实例。
+ */
+export function attachGuards(router: Router): void {
+  router.beforeEach(async (to) => {
+    const needsAuth = to.matched.some((record) => record.meta.requiresAuth === true);
+    const guestOnly = to.matched.some((record) => record.meta.guestOnly === true);
+    if (!needsAuth && !guestOnly) {
+      return true;
     }
-    if (to.hash !== '') {
-      return { el: to.hash, top: 96, behavior: 'smooth' };
+
+    const session = useSessionStore();
+    const signedIn = await session.ensureSession();
+
+    if (needsAuth && !signedIn) {
+      return toLogin(to);
     }
-    return { top: 0 };
-  },
-});
+    if (guestOnly && signedIn) {
+      return { name: ADMIN_HOME_ROUTE };
+    }
+    return true;
+  });
+
+  // 会话在页面使用期间失效（refresh 也救不回来）时，由 API 层通知到这里统一跳转。
+  registerExpiredHandler(() => setSessionExpired(router));
+}
 
 /**
  * 把当前地址塞进 `redirect` 查询参数，登录后原地返回。
@@ -120,32 +172,12 @@ function toLogin(to: RouteLocationNormalized): { name: string; query: Record<str
   return { name: LOGIN_ROUTE, query: { redirect } };
 }
 
-router.beforeEach(async (to) => {
-  const needsAuth = to.matched.some((record) => record.meta.requiresAuth === true);
-  const guestOnly = to.matched.some((record) => record.meta.guestOnly === true);
-  if (!needsAuth && !guestOnly) {
-    return true;
-  }
-
-  const session = useSessionStore();
-  const signedIn = await session.ensureSession();
-
-  if (needsAuth && !signedIn) {
-    return toLogin(to);
-  }
-  if (guestOnly && signedIn) {
-    return { name: ADMIN_HOME_ROUTE };
-  }
-  return true;
-});
-
-// 会话在页面使用期间失效（refresh 也救不回来）时，由 API 层通知到这里统一跳转。
-registerExpiredHandler(setSessionExpired);
-
 /**
  * 清掉 store 里的会话并跳登录页（当前已在登录页时不再跳，免得刷屏）。
+ *
+ * @param router 当前应用的路由实例。
  */
-function setSessionExpired(): void {
+function setSessionExpired(router: Router): void {
   const session = useSessionStore();
   session.clear();
 

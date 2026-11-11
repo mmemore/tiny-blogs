@@ -1,7 +1,19 @@
 import { fileURLToPath, URL } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import vue from '@vitejs/plugin-vue';
+import type { ViteSSGOptions } from 'vite-ssg';
 import { defineConfig, loadEnv } from 'vite';
+
+/**
+ * vite-ssg 的选项挂在 vite 配置的顶层（`build()` 里 `config.ssgOptions` 读取）。
+ * vite 本身没有这个字段，这里做一次模块扩展让类型完整。
+ */
+declare module 'vite' {
+  interface UserConfig {
+    /** 预渲染选项；仅 `vite-ssg build` 读取，普通 SPA 构建忽略。 */
+    ssgOptions?: ViteSSGOptions;
+  }
+}
 
 /**
  * 仓库根目录：`.env` 与 `pnpm-workspace.yaml` 都在这里，
@@ -36,6 +48,15 @@ export default defineConfig(({ mode }) => {
 
   return {
     envDir: repoRoot,
+    /**
+     * 预渲染选项（票 10）。只在 `vite-ssg build`（即 `pnpm release`）时生效；
+     * 普通 `pnpm build` 仍然是 SPA，`ssgOptions` 被完全忽略。
+     */
+    ssgOptions: {
+      // `nested`：`/posts/<slug>` 落成 `dist/posts/<slug>/index.html`，
+      // 静态托管无需 rewrite 规则，URL 与目录一一对应（冒烟脚本也按这个布局断言）。
+      dirStyle: 'nested',
+    },
     // Tailwind v4 走 Vite 插件而不是 PostCSS：`styles/tokens.css` 里的 `@import 'tailwindcss'`
     // 与 `@theme` 由它在构建期展开，令牌因此只有一份来源。
     plugins: [vue(), tailwindcss()],
@@ -66,7 +87,10 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
-      outDir: 'dist',
+      // `pnpm release` 的原子替换要求先构建到 `dist-next`，成功后再整体改名 `dist`。
+      // 平时不设置该变量，走默认 `dist`（见 scripts/release.mjs）。
+      outDir: process.env.RELEASE_OUT_DIR ?? 'dist',
+      emptyOutDir: true,
       sourcemap: mode !== 'production',
       commonjsOptions: {
         // 共享包以 CommonJS 产物被两端引用（API 是 CJS），而它是 workspace 链接包，
@@ -88,9 +112,19 @@ export default defineConfig(({ mode }) => {
            * 渲染器只在真正调用 `renderMarkdown` 的页面（关于页）执行，且全站共用一份、可长期缓存。
            * 也就是说：**详情页依然不解析 Markdown**（它只 v-html 接口给的 `html`），
            * 关于页才需要渲染器，这是票 07 明确要求的"本地 Markdown + 共享渲染器"。
+           *
+           * 用函数而不是 `{ contract: [...], admin: [...] }` 对象形式的原因：
+           * `vite-ssg` 的 **SSR 构建**把所有依赖标成 external，而对象形式会预先解析出
+           * 模块 id 并强行入块，Rollup 直接报
+           * `EXTERNAL_MODULES_CANNOT_BE_INCLUDED_IN_MANUAL_CHUNKS`。
+           * 函数形式只对**真正被打进图里**的模块调用，SSR 构建自然跳过。
            */
-          manualChunks: {
-            contract: ['@tiny-blogs/shared'],
+          manualChunks(id: string): string | undefined {
+            /** 统一成正斜杠，避免 Windows 反斜杠路径漏判。 */
+            const normalized = id.replaceAll('\\', '/');
+            if (normalized.includes('/packages/shared/')) {
+              return 'contract';
+            }
             /**
              * 后台组件库单独成块。
              *
@@ -98,7 +132,10 @@ export default defineConfig(({ mode }) => {
              * 1. 前台入口 chunk 里不会出现 `naive-ui` 的任何字节（构建后可直接 grep 断言）；
              * 2. 后台各页面之间共享同一份组件库，不会每个页面各背一份。
              */
-            admin: ['naive-ui'],
+            if (/\/node_modules\/(?:\.pnpm\/[^/]+\/node_modules\/)?naive-ui\//.test(normalized)) {
+              return 'admin';
+            }
+            return undefined;
           },
         },
       },

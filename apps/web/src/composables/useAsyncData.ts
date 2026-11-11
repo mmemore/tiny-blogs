@@ -9,7 +9,15 @@
  * 3. 同一 `key` 的多个消费者共享同一组 ref 与同一个 in-flight promise，
  *    避免"同一页两个组件各发一次请求"。
  */
-import { onServerPrefetch, onScopeDispose, shallowRef, type ShallowRef } from 'vue';
+import {
+  hasInjectionContext,
+  inject,
+  onServerPrefetch,
+  onScopeDispose,
+  shallowRef,
+  type App,
+  type ShallowRef,
+} from 'vue';
 
 /** 一次异步读取的状态。 */
 export interface AsyncData<T> {
@@ -32,8 +40,38 @@ interface Entry {
   consumers: number;
 }
 
-/** 进程内共享表：同一 key 只保留一份状态。 */
-const entries = new Map<string, Entry>();
+/** 进程内共享表：同一 key 只保留一份状态（无应用上下文时的兜底）。 */
+const defaultEntries = new Map<string, Entry>();
+
+/** 应用级缓存表的注入键。 */
+const CACHE_KEY = Symbol('tiny-blogs:async-data-cache');
+
+/**
+ * 安装**应用级**缓存表。
+ *
+ * 为什么必须按 app 隔离（票 10 实测踩到）：`vite-ssg` 在同一个 Node 进程里渲染所有页面，
+ * 如果表是模块级的，`post:detail` 这种常量 key 会被第一页的数据填满，
+ * 后面 19 个文章页全部渲染成同一篇——HTML 里 `<title>` 与正文都对不上。
+ * 预渲染器**每个页面新建一个 app**，表随 app 走就天然隔离；
+ * 浏览器端只有一个 app，行为与"进程内共享"完全一致（用于同页多组件去重）。
+ *
+ * @param app Vue 应用实例（`app.use(installAsyncDataCache)` 即可）。
+ */
+export function installAsyncDataCache(app: App): void {
+  app.provide(CACHE_KEY, new Map<string, Entry>());
+}
+
+/**
+ * 取当前上下文使用的缓存表。
+ *
+ * @returns 应用级表；不在 `setup()` 里调用时退回模块级表。
+ */
+function resolveEntries(): Map<string, Entry> {
+  if (!hasInjectionContext()) {
+    return defaultEntries;
+  }
+  return inject<Map<string, Entry> | null>(CACHE_KEY, null) ?? defaultEntries;
+}
 
 /**
  * 声明一份异步数据。
@@ -43,6 +81,7 @@ const entries = new Map<string, Entry>();
  * @returns 数据 / 错误 / 加载中状态与重试函数。
  */
 export function useAsyncData<T>(key: string, load: () => Promise<T>): AsyncData<T> {
+  const entries = resolveEntries();
   let entry = entries.get(key);
   if (entry === undefined) {
     entry = {

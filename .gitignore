@@ -4,8 +4,13 @@ node_modules/
 
 # Build output
 dist/
-build/
+/build/
+dist-next/
+dist-prev/
 *.tsbuildinfo
+
+# Release pipeline artifacts (snapshot is public content, but session-local)
+.release/
 
 # Env & secrets
 .env

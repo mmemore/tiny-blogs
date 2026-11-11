@@ -13,9 +13,13 @@ export default tseslint.config(
     ignores: [
       '**/node_modules/**',
       '**/dist/**',
+      '**/dist-next/**',
+      '**/dist-prev/**',
       '**/coverage/**',
       '**/var/**',
       '**/*.d.ts',
+      // 发布链路的工作目录：快照 JSON + 归档的旧产物，都是构建产物不是源码。
+      '.release/**',
       // Non-product directories: throwaway prototypes, agent workspace, reference design.
       '.scratch/**',
       '.workbuddy/**',
@@ -65,6 +69,14 @@ export default tseslint.config(
     files: ['apps/api/**/*.ts'],
     rules: {
       '@typescript-eslint/consistent-type-imports': 'off',
+    },
+  },
+  {
+    // `scripts/` 是本仓库的命令行工具（发布编排、构建冒烟）：打印进度与差异清单
+    // 就是它们的输出契约，因此放开 `console`。
+    files: ['scripts/**/*.mjs'],
+    rules: {
+      'no-console': 'off',
     },
   },
 );
