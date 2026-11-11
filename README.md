@@ -52,7 +52,7 @@ API 单独监听 `http://127.0.0.1:3000/api`，前端 dev server 把 `/api` 与 
 代理过去，所以浏览器里始终是同源请求（见 [ADR-0005](docs/adr/0005-monorepo-and-dev-environment.md)）。
 
 常用辅助命令：`pnpm db:down`、`pnpm db:logs`、`pnpm db:reset`（清库重跑迁移 + 种子）、
-`pnpm migration:show`、`pnpm db:schema`。
+`pnpm migration:show`、`pnpm migration:revert`（回滚最近一次迁移）、`pnpm db:schema`。
 
 ---
 
@@ -90,7 +90,7 @@ pnpm smoke
 ```bash
 # API 必须在跑（构建期要从它取快照），然后：
 pnpm release
-pnpm smoke        # 建议每次都跑：64 项断言，失败列出差异清单
+pnpm smoke        # 建议每次都跑：断言项数随快照篇数浮动，失败列出差异清单
 ```
 
 `pnpm release` 做四件事：
@@ -103,6 +103,9 @@ pnpm smoke        # 建议每次都跑：64 项断言，失败列出差异清单
    head 在构建期就写死，HTML 里直接带正文。
 4. 成功后原子替换：`dist` → `dist-prev` → `dist-next` 改名 `dist`；任何一步失败都保留
    上一版 `dist`，并把失败的产物归档到 `.release/trash/`（不递归删除，便于排查）。
+
+注意区分：`pnpm build` 是普通 SPA 构建（不预渲染、直接写 `apps/web/dist`），
+日常交付请走 `pnpm release`，不要用它代替。
 
 部署只需要两件事：
 
@@ -127,7 +130,7 @@ pnpm smoke        # 建议每次都跑：64 项断言，失败列出差异清单
 | API | NestJS 10、TypeORM 0.3、class-validator、Multer（图片上传） |
 | 数据库 | MySQL 8（InnoDB + `ngram` 分词做中文全文检索） |
 | 构建/工具 | pnpm workspace、Vite 6、TypeScript 5.7、ESLint 9（flat config） |
-| 测试 | Vitest（shared）、Jest + supertest（API）、Playwright（qa/ 手动 E2E） |
+| 测试 | Vitest（shared 与 API 都是）+ supertest（API 的 HTTP 边界）、Playwright（qa/ 手动 E2E） |
 
 ## 目录速览
 
