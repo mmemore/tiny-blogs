@@ -29,7 +29,7 @@ async function bootstrap(): Promise<void> {
   const env = readApiEnv();
 
   const app = await NestFactory.create(AppModule.forRoot(env));
-  configureApp(app);
+  configureApp(app, env);
   app.enableShutdownHooks();
 
   const dataSource = app.get(DataSource);

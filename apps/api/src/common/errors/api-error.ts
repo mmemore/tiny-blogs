@@ -50,4 +50,19 @@ export class ApiError extends HttpException {
   static conflict(message = '资源冲突', code: ApiErrorCode = 'CONFLICT'): ApiError {
     return new ApiError(code, message, HttpStatus.CONFLICT);
   }
+
+  /** 422：上传文件超过大小上限。 */
+  static fileTooLarge(maxBytes: number): ApiError {
+    const limitMb = Math.round((maxBytes / (1024 * 1024)) * 10) / 10;
+    return new ApiError(
+      'FILE_TOO_LARGE',
+      `文件超过上传上限（${String(limitMb)} MB）`,
+      HttpStatus.UNPROCESSABLE_ENTITY,
+    );
+  }
+
+  /** 422：上传文件的真实类型不在白名单内。 */
+  static unsupportedMediaType(message = '只支持 png / jpeg / gif / webp 图片'): ApiError {
+    return new ApiError('UNSUPPORTED_MEDIA_TYPE', message, HttpStatus.UNPROCESSABLE_ENTITY);
+  }
 }

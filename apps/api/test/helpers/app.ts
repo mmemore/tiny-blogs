@@ -36,7 +36,7 @@ export async function createTestApp(
 
   const options: NestApplicationOptions = { logger: ['error'] };
   const app = await NestFactory.create(AppModule.forRoot(env), options);
-  configureApp(app);
+  configureApp(app, env);
   await app.init();
 
   return { app, dataSource: app.get(DataSource), env };

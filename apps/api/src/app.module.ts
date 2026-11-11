@@ -7,6 +7,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { AuthoringModule } from './modules/authoring/authoring.module';
 import { ContentModule } from './modules/content/content.module';
 import { HealthModule } from './modules/health/health.module';
+import { StorageModule } from './modules/storage/storage.module';
 
 /**
  * 根模块。用 `forRoot(env)` 而不是在模块里读 `process.env`：
@@ -34,6 +35,7 @@ export class AppModule {
         AuthModule.forRoot(env),
         ContentModule,
         AuthoringModule,
+        StorageModule.forRoot(env),
       ],
     };
   }

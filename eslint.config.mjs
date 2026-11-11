@@ -21,6 +21,8 @@ export default tseslint.config(
       '.workbuddy/**',
       'design/**',
       'docs/**',
+      // QA 一次性脚本（playwright run-code / 安全断言），不是产品代码。
+      'qa/**',
     ],
   },
   js.configs.recommended,
