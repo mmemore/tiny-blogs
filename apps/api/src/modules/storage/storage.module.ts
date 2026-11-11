@@ -26,9 +26,14 @@ export class StorageModule {
         // 给 `FileInterceptor` 一个全局默认上限：超限的请求在进入控制器前就被 multer 掐断，
         // 不会把 5MB 以上的字节先读进内存。`AllExceptionsFilter` 把 `LIMIT_FILE_SIZE`
         // 翻译成 422 `FILE_TOO_LARGE`，与存储层的拒绝理由保持同一个契约错误码。
+        //
+        // 为什么 `+ 1`：底层 busboy 的语义是 `fileSize >= fileSizeLimit` 即触发 `limit`，
+        // 恰好等于 `UPLOAD_MAX_BYTES` 的合法文件（契约 §4.5 是"≤上限"）会在这里被误拦。
+        // 放宽 1 字节让"恰好等于上限"的文件能到达存储层，由 `storage.service` 的
+        // `> maxBytes`（严格大于）做权威判定——两层语义就此对齐。不要把 +1"优化"回去。
         MulterModule.registerAsync({
           useFactory: () => ({
-            limits: { fileSize: env.upload.maxBytes, files: 1, fields: 8 },
+            limits: { fileSize: env.upload.maxBytes + 1, files: 1, fields: 8 },
           }),
         }),
       ],

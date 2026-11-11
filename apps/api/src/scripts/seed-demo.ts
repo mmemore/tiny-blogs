@@ -98,7 +98,7 @@ const DEMO_POSTS: readonly DemoPost[] = [
       '',
       `${FENCE}ts`,
       "const snapshot = await fetch('/api/build/export', {",
-      "  headers: { 'X-Build-Token': process.env.BUILD_EXPORT_TOKEN },",
+      "  headers: { 'X-Build-Token': process.env.<BUILD_TOKEN> },",
       '});',
       'const data = await snapshot.json();',
       'await renderAll(data); // 预渲染入口：把快照塞进 store，再逐路由生成静态页',

@@ -25,8 +25,10 @@ export default tseslint.config(
       '.workbuddy/**',
       'design/**',
       'docs/**',
-      // QA 一次性脚本（playwright run-code / 安全断言），不是产品代码。
+      // QA 一次性脚本（playwright run-code / 安全断言）与截图目录里的临时探针，
+      // 都是 session-local 产物，不是产品代码。
       'qa/**',
+      'qa-shots/**',
     ],
   },
   js.configs.recommended,

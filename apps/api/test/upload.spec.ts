@@ -16,6 +16,7 @@ import { join } from 'node:path';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { UploadResult } from '@tiny-blogs/shared';
+import { UPLOAD_KEY_PATTERN } from '@tiny-blogs/shared';
 import { closeTestApp, createTestApp, type TestContext } from './helpers/app';
 import { createUser, resetDatabase, type SeededUser } from './helpers/db';
 import { bearer, login } from './helpers/http';
@@ -152,6 +153,41 @@ describe('admin upload', () => {
       .expect(422);
 
     expect(response.body).toMatchObject({ error: { code: 'UNSUPPORTED_MEDIA_TYPE' } });
+  });
+
+  it('恰好等于 UPLOAD_MAX_BYTES → 201（契约 §4.5 是"≤上限"）', async () => {
+    // 边界钉死：busboy 的 `>=` 语义曾把恰好等于上限的文件误拦成 422。
+    // multer 层放宽 1 字节后，这个尺寸必须能穿过它、由存储层（严格大于才拒）放行。
+    const exact = Buffer.concat([
+      PNG_BYTES,
+      Buffer.alloc(context.env.upload.maxBytes - PNG_BYTES.length),
+    ]);
+    expect(exact.length).toBe(context.env.upload.maxBytes);
+
+    const response = await request(context.app.getHttpServer())
+      .post('/api/admin/upload')
+      .set(bearer(token))
+      .attach('file', exact, { filename: 'exact-limit.png', contentType: 'image/png' })
+      .expect(201);
+
+    const result = response.body as UploadResult;
+    expect(result.key).toMatch(UPLOAD_KEY_PATTERN);
+  });
+
+  it('上限 +1 字节 → 422 FILE_TOO_LARGE（多出来的那 1 字节必拒）', async () => {
+    const over = Buffer.concat([
+      PNG_BYTES,
+      Buffer.alloc(context.env.upload.maxBytes - PNG_BYTES.length + 1),
+    ]);
+    expect(over.length).toBe(context.env.upload.maxBytes + 1);
+
+    const response = await request(context.app.getHttpServer())
+      .post('/api/admin/upload')
+      .set(bearer(token))
+      .attach('file', over, { filename: 'over-limit.png', contentType: 'image/png' })
+      .expect(422);
+
+    expect(response.body).toMatchObject({ error: { code: 'FILE_TOO_LARGE' } });
   });
 
   it('超过 5 MB → 422 FILE_TOO_LARGE', async () => {
