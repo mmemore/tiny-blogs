@@ -2,7 +2,7 @@
 /**
  * 评论区（Giscus）。
  *
- * 票 07 的验收点：`VITE_GISCUS_REPO` / `_REPO_ID` / `_CATEGORY` / `_CATEGORY_ID`
+ * 验收点：`VITE_GISCUS_REPO` / `_REPO_ID` / `_CATEGORY` / `_CATEGORY_ID`
  * 任一为空则**整块不渲染**（连标题和分隔线都不出现），v1 默认就是这种状态。
  *
  * 实现要点：

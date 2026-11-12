@@ -1,5 +1,5 @@
 /**
- * `pnpm smoke`：构建冒烟脚本（票 10）。
+ * `pnpm smoke`：构建冒烟脚本。
  *
  * 无浏览器依赖，只检查 dist 产物 + `.release/snapshot.json` 的交叉一致性：
  * 1. 关键页面存在：5 个静态页 + 每个快照 slug 的 `posts/<slug>/index.html`；
@@ -9,7 +9,9 @@
  * 3. 结构性证明草稿不产生路由：`dist/posts/` 目录集合 === 快照 slug 集合，
  *    且 `dist/admin/` 不存在；
  * 4. 零第三方字体直连：`fonts.googleapis.com` / `fonts.gstatic.com` 不出现；
- * 5. 密钥零泄漏：`BUILD_EXPORT_TOKEN` 实际值不出现在任何 dist 文件里。
+ * 5. 密钥零泄漏：`BUILD_EXPORT_TOKEN` 实际值不出现在任何 dist 文件里；
+ * 6. 静态内容模式的运行时快照已进产物：`dist/content/snapshot.json` 存在
+ *    （客户端水合后的翻页/搜索全靠它）。
  *
  * 任一断言失败：打印清晰差异清单并以非 0 退出。
  */
@@ -147,7 +149,7 @@ const allFiles = walkFiles(DIST);
 console.log(`[smoke] dist 共 ${String(allFiles.length)} 个文件，快照 ${String(posts.length)} 篇已发布。`);
 
 // ---- 1. 关键页面存在 ----
-console.log('[smoke] 1/5 关键页面存在');
+console.log('[smoke] 1/6 关键页面存在');
 const staticPages = ['index.html', 'posts/index.html', 'tags/index.html', 'archives/index.html', 'about/index.html'];
 for (const page of staticPages) {
   assert(allFiles.includes(page), `存在 ${page}`);
@@ -158,7 +160,7 @@ for (const post of posts) {
 }
 
 // ---- 2. 文章页 HTML 直接含正文 + meta ----
-console.log('[smoke] 2/5 文章页正文与 meta');
+console.log('[smoke] 2/6 文章页正文与 meta');
 const readPostHtml = (slug) => readFileSync(join(DIST, 'posts', slug, 'index.html'), 'utf8');
 
 // 正文特征串：快照第一篇的第一个 `## ` 小节标题文本
@@ -197,7 +199,7 @@ for (const post of posts) {
 }
 
 // ---- 3. 草稿不产生路由（结构证明） ----
-console.log('[smoke] 3/5 草稿不产生路由');
+console.log('[smoke] 3/6 草稿不产生路由');
 assert(!existsSync(join(DIST, 'admin')), 'dist/admin/ 不存在（/admin 不参与预渲染）');
 const postsDir = join(DIST, 'posts');
 /** dist/posts 下的子目录集合（即生成的文章路由）。 */
@@ -213,7 +215,7 @@ assert(
 );
 
 // ---- 4. 零第三方字体直连 ----
-console.log('[smoke] 4/5 零第三方字体直连');
+console.log('[smoke] 4/6 零第三方字体直连');
 const fontHits = allFiles.filter((file) => {
   if (!/\.(html|js|css)$/.test(file)) {
     return false;
@@ -224,14 +226,27 @@ const fontHits = allFiles.filter((file) => {
 assert(fontHits.length === 0, `fonts.googleapis.com / fonts.gstatic.com 零命中${fontHits.length > 0 ? `（命中: ${fontHits.slice(0, 5).join(', ')}${fontHits.length > 5 ? ' 等' : ''}）` : ''}`);
 
 // ---- 5. 密钥零泄漏 ----
-console.log('[smoke] 5/5 密钥零泄漏');
+console.log('[smoke] 5/6 密钥零泄漏');
 const buildToken = readEnvValue('BUILD_EXPORT_TOKEN');
 if (buildToken === '') {
-  bad('BUILD_EXPORT_TOKEN 读不到（.env 或环境）——无法做泄漏检查');
+  // CI 环境本来就不注入任何 secret（读不到是正常的）；本地读不到才是异常，
+  // 说明发布链路配置缺失，泄漏检查失去了前提。
+  if (process.env.CI === 'true') {
+    ok('CI 环境未注入 BUILD_EXPORT_TOKEN，跳过泄漏检查（CI 本无任何 secret）');
+  } else {
+    bad('BUILD_EXPORT_TOKEN 读不到（.env 或环境）——无法做泄漏检查');
+  }
 } else {
   const tokenHits = allFiles.filter((file) => readFileSync(join(DIST, file), 'utf8').includes(buildToken));
   assert(tokenHits.length === 0, `BUILD_EXPORT_TOKEN 实际值在 dist 中零命中${tokenHits.length > 0 ? `（泄漏于: ${tokenHits.slice(0, 5).join(', ')}）` : ''}`);
 }
+
+// ---- 6. 静态内容模式的运行时快照 ----
+console.log('[smoke] 6/6 静态内容模式的运行时快照');
+assert(
+  existsSync(join(DIST, 'content', 'snapshot.json')),
+  'dist/content/snapshot.json 存在（客户端水合后的取数依赖它）',
+);
 
 // ---- 汇总 ----
 if (failures.length > 0) {

@@ -1,0 +1,653 @@
+{
+  "version": 1,
+  "generatedAt": "2026-11-12T07:55:51.749Z",
+  "site": {
+    "title": "Tiny Blogs",
+    "description": "一个自带写作后台的个人博客：Vue 3 预渲染前台 + NestJS API + MySQL。",
+    "author": "Tiny Blogs",
+    "ogImage": "/og-default.png"
+  },
+  "posts": [
+    {
+      "slug": "vite-ssg-prerender",
+      "title": "用 vite-ssg 给 Vue 3 博客做预渲染：SEO 与首屏的取舍",
+      "summary": "纯 SPA 上线两周，搜索引擎收录 0 条。比较运行时 SSR 与构建期预渲染之后，选后者，并把导出接口同时当成备份入口。",
+      "publishedAt": "2026-11-02T02:30:00.000Z",
+      "updatedAt": "2026-11-02T02:30:00.000Z",
+      "readingMinutes": 2,
+      "track": {
+        "no": "A1",
+        "side": "A",
+        "catalog": "TB—001",
+        "accent": "v1"
+      },
+      "tags": [
+        {
+          "name": "Vue",
+          "slug": "vue"
+        },
+        {
+          "name": "构建",
+          "slug": "build"
+        }
+      ],
+      "html": "<p>这个博客的第一版是纯单页应用。上线两周，搜索引擎收录 0 条。原因很朴素：爬虫拿到的 HTML 里只有一个空的 <code>div#app</code>。</p>\n<p>可选方案有三个：运行时 SSR、构建期预渲染，以及干脆放弃 SEO。第三种最先被排除——写这些东西就是为了被搜到。</p>\n<h2 id=\"t1\">为什么要预渲染</h2>\n<p>运行时 SSR 需要一台常驻的 Node 进程，还要处理缓存、降级，以及渲染服务挂了怎么办。对一个更新频率远低于访问频率的博客来说，这些复杂度换不来任何东西。</p>\n<blockquote>\n<p>当内容的更新频率远低于访问频率时，预渲染把渲染这件事从请求路径上彻底挪走了。</p>\n</blockquote>\n<p>代价只有一个：发布之后要重建一次，中间有一分钟左右的窗口期。</p>\n<h2 id=\"t2\">把导出接口当成数据源</h2>\n<p>构建期不能连数据库：构建机可能在任何地方，也不该持有生产库凭据。所以 API 单独开了一个导出接口，用独立于用户鉴权的服务间 token 保护。</p>\n<pre><code class=\"language-ts\"><span class=\"hljs-keyword\">const</span> snapshot = <span class=\"hljs-keyword\">await</span> <span class=\"hljs-title function_\">fetch</span>(<span class=\"hljs-string\">&#x27;/api/build/export&#x27;</span>, {\n  <span class=\"hljs-attr\">headers</span>: { <span class=\"hljs-string\">&#x27;X-Build-Token&#x27;</span>: process.<span class=\"hljs-property\">env</span>.&lt;<span class=\"hljs-variable constant_\">BUILD_TOKEN</span>&gt; },\n});\n<span class=\"hljs-keyword\">const</span> data = <span class=\"hljs-keyword\">await</span> snapshot.<span class=\"hljs-title function_\">json</span>();\n<span class=\"hljs-keyword\">await</span> <span class=\"hljs-title function_\">renderAll</span>(data); <span class=\"hljs-comment\">// 预渲染入口：把快照塞进 store，再逐路由生成静态页</span>\n</code></pre>\n<p>这个接口同时被两件事复用：构建拉数据、后台一键导出 JSON 做备份。少写一个接口，也少一处不一致。</p>\n<h3 id=\"t3\">两个容易翻车的细节</h3>\n<ol>\n<li>后台路由不能进预渲染，否则 <code>/admin</code> 会被渲染成静态页并公开可访问。</li>\n<li>客户端与构建期必须同一套 Markdown 管线，否则迟早出现线上和本地不一样。</li>\n</ol>\n<h2 id=\"t4\">代价与收尾</h2>\n<p>全量重建的耗时随文章数线性增长，两千篇以内都在十几秒量级，够用。真到了撑不住的那天再换增量渲染，而不是现在就为它付复杂度。</p>\n<table>\n<thead>\n<tr>\n<th>方案</th>\n<th>首屏</th>\n<th>运维成本</th>\n<th>适用场景</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>纯 SPA</td>\n<td>依赖脚本执行</td>\n<td>低</td>\n<td>后台系统</td>\n</tr>\n<tr>\n<td>运行时 SSR</td>\n<td>快</td>\n<td>高</td>\n<td>内容实时性要求高</td>\n</tr>\n<tr>\n<td>构建期预渲染</td>\n<td>最快</td>\n<td>低</td>\n<td>更新频率低的博客</td>\n</tr>\n</tbody>\n</table>\n",
+      "headings": [
+        {
+          "level": 2,
+          "text": "为什么要预渲染",
+          "id": "t1"
+        },
+        {
+          "level": 2,
+          "text": "把导出接口当成数据源",
+          "id": "t2"
+        },
+        {
+          "level": 3,
+          "text": "两个容易翻车的细节",
+          "id": "t3"
+        },
+        {
+          "level": 2,
+          "text": "代价与收尾",
+          "id": "t4"
+        }
+      ],
+      "prev": {
+        "slug": "mysql-ngram-fulltext",
+        "title": "MySQL ngram 全文索引踩坑：最短可搜长度、布尔语法与字符集",
+        "track": {
+          "no": "A2",
+          "side": "A",
+          "catalog": "TB—002",
+          "accent": "v2"
+        }
+      },
+      "next": null,
+      "contentMd": "这个博客的第一版是纯单页应用。上线两周，搜索引擎收录 0 条。原因很朴素：爬虫拿到的 HTML 里只有一个空的 `div#app`。\n\n可选方案有三个：运行时 SSR、构建期预渲染，以及干脆放弃 SEO。第三种最先被排除——写这些东西就是为了被搜到。\n\n## 为什么要预渲染\n\n运行时 SSR 需要一台常驻的 Node 进程，还要处理缓存、降级，以及渲染服务挂了怎么办。对一个更新频率远低于访问频率的博客来说，这些复杂度换不来任何东西。\n\n> 当内容的更新频率远低于访问频率时，预渲染把渲染这件事从请求路径上彻底挪走了。\n\n代价只有一个：发布之后要重建一次，中间有一分钟左右的窗口期。\n\n## 把导出接口当成数据源\n\n构建期不能连数据库：构建机可能在任何地方，也不该持有生产库凭据。所以 API 单独开了一个导出接口，用独立于用户鉴权的服务间 token 保护。\n\n```ts\nconst snapshot = await fetch('/api/build/export', {\n  headers: { 'X-Build-Token': process.env.<BUILD_TOKEN> },\n});\nconst data = await snapshot.json();\nawait renderAll(data); // 预渲染入口：把快照塞进 store，再逐路由生成静态页\n```\n\n这个接口同时被两件事复用：构建拉数据、后台一键导出 JSON 做备份。少写一个接口，也少一处不一致。\n\n### 两个容易翻车的细节\n\n1. 后台路由不能进预渲染，否则 `/admin` 会被渲染成静态页并公开可访问。\n2. 客户端与构建期必须同一套 Markdown 管线，否则迟早出现线上和本地不一样。\n\n## 代价与收尾\n\n全量重建的耗时随文章数线性增长，两千篇以内都在十几秒量级，够用。真到了撑不住的那天再换增量渲染，而不是现在就为它付复杂度。\n\n| 方案 | 首屏 | 运维成本 | 适用场景 |\n| --- | --- | --- | --- |\n| 纯 SPA | 依赖脚本执行 | 低 | 后台系统 |\n| 运行时 SSR | 快 | 高 | 内容实时性要求高 |\n| 构建期预渲染 | 最快 | 低 | 更新频率低的博客 |"
+    },
+    {
+      "slug": "mysql-ngram-fulltext",
+      "title": "MySQL ngram 全文索引踩坑：最短可搜长度、布尔语法与字符集",
+      "summary": "为了几十篇文章上一套搜索引擎不划算。MySQL 8 的 ngram 解析器够用，但有三个坑必须提前知道。",
+      "publishedAt": "2026-10-27T03:10:00.000Z",
+      "updatedAt": "2026-10-27T03:10:00.000Z",
+      "readingMinutes": 2,
+      "track": {
+        "no": "A2",
+        "side": "A",
+        "catalog": "TB—002",
+        "accent": "v2"
+      },
+      "tags": [
+        {
+          "name": "MySQL",
+          "slug": "mysql"
+        },
+        {
+          "name": "后端",
+          "slug": "backend"
+        }
+      ],
+      "html": "<p>全文检索一开始想的是上 Elasticsearch。后来算了算：一个人写博客，为了搜索几十篇文章再维护一个集群，不划算。MySQL 8 自带 ngram 解析器，中文够用。</p>\n<h2 id=\"t1\">建索引</h2>\n<pre><code class=\"language-sql\"><span class=\"hljs-keyword\">ALTER TABLE</span> posts\n  <span class=\"hljs-keyword\">ADD</span> FULLTEXT KEY ft_posts_search (title, summary, content_md) <span class=\"hljs-keyword\">WITH</span> PARSER ngram;\n</code></pre>\n<h2 id=\"t2\">三个坑</h2>\n<h3 id=\"t3\">一、ngram_token_size 决定最短可搜长度</h3>\n<p>默认 <code>ngram_token_size = 2</code>，也就是至少两个汉字才能命中。预渲染能搜到，单个字搜不到。这是配置，不是 bug。</p>\n<h3 id=\"t4\">二、布尔模式下的运算符</h3>\n<p>加号、减号、星号、双引号在 <code>IN BOOLEAN MODE</code> 里都是运算符。用户输入 <code>Vue 3</code> 时若不处理，查询会静默变成另一件事。</p>\n<h3 id=\"t5\">三、字符集</h3>\n<p>表是 utf8mb4，连接也必须是 utf8mb4。用命令行灌数据时忘了加 <code>--default-character-set=utf8mb4</code>，中文会被写坏——存进去是乱码，搜出来自然也是乱码。</p>\n<h2 id=\"t6\">怎么查</h2>\n<pre><code class=\"language-sql\"><span class=\"hljs-keyword\">SELECT</span> id <span class=\"hljs-keyword\">FROM</span> posts\n<span class=\"hljs-keyword\">WHERE</span> status <span class=\"hljs-operator\">=</span> <span class=\"hljs-string\">&#x27;published&#x27;</span>\n  <span class=\"hljs-keyword\">AND</span> <span class=\"hljs-keyword\">MATCH</span>(title, summary, content_md) AGAINST (? <span class=\"hljs-keyword\">IN</span> <span class=\"hljs-type\">BOOLEAN</span> MODE);\n</code></pre>\n<p>查询词由后端拼接，前端只传一个 <code>q</code>。转义规则属于检索实现的一部分，不该让两端各记一遍。</p>\n",
+      "headings": [
+        {
+          "level": 2,
+          "text": "建索引",
+          "id": "t1"
+        },
+        {
+          "level": 2,
+          "text": "三个坑",
+          "id": "t2"
+        },
+        {
+          "level": 3,
+          "text": "一、ngram_token_size 决定最短可搜长度",
+          "id": "t3"
+        },
+        {
+          "level": 3,
+          "text": "二、布尔模式下的运算符",
+          "id": "t4"
+        },
+        {
+          "level": 3,
+          "text": "三、字符集",
+          "id": "t5"
+        },
+        {
+          "level": 2,
+          "text": "怎么查",
+          "id": "t6"
+        }
+      ],
+      "prev": {
+        "slug": "jwt-dual-token",
+        "title": "JWT 双 token 实战：15 分钟与 30 天",
+        "track": {
+          "no": "A3",
+          "side": "A",
+          "catalog": "TB—003",
+          "accent": "v3"
+        }
+      },
+      "next": {
+        "slug": "vite-ssg-prerender",
+        "title": "用 vite-ssg 给 Vue 3 博客做预渲染：SEO 与首屏的取舍",
+        "track": {
+          "no": "A1",
+          "side": "A",
+          "catalog": "TB—001",
+          "accent": "v1"
+        }
+      },
+      "contentMd": "全文检索一开始想的是上 Elasticsearch。后来算了算：一个人写博客，为了搜索几十篇文章再维护一个集群，不划算。MySQL 8 自带 ngram 解析器，中文够用。\n\n## 建索引\n\n```sql\nALTER TABLE posts\n  ADD FULLTEXT KEY ft_posts_search (title, summary, content_md) WITH PARSER ngram;\n```\n\n## 三个坑\n\n### 一、ngram_token_size 决定最短可搜长度\n\n默认 `ngram_token_size = 2`，也就是至少两个汉字才能命中。预渲染能搜到，单个字搜不到。这是配置，不是 bug。\n\n### 二、布尔模式下的运算符\n\n加号、减号、星号、双引号在 `IN BOOLEAN MODE` 里都是运算符。用户输入 `Vue 3` 时若不处理，查询会静默变成另一件事。\n\n### 三、字符集\n\n表是 utf8mb4，连接也必须是 utf8mb4。用命令行灌数据时忘了加 `--default-character-set=utf8mb4`，中文会被写坏——存进去是乱码，搜出来自然也是乱码。\n\n## 怎么查\n\n```sql\nSELECT id FROM posts\nWHERE status = 'published'\n  AND MATCH(title, summary, content_md) AGAINST (? IN BOOLEAN MODE);\n```\n\n查询词由后端拼接，前端只传一个 `q`。转义规则属于检索实现的一部分，不该让两端各记一遍。"
+    },
+    {
+      "slug": "jwt-dual-token",
+      "title": "JWT 双 token 实战：15 分钟与 30 天",
+      "summary": "短 token 保证安全，长 token 保证不用天天登录。真正的难点不是有效期，而是刷新失败时怎么收场。",
+      "publishedAt": "2026-10-19T13:40:00.000Z",
+      "updatedAt": "2026-10-19T13:40:00.000Z",
+      "readingMinutes": 2,
+      "track": {
+        "no": "A3",
+        "side": "A",
+        "catalog": "TB—003",
+        "accent": "v3"
+      },
+      "tags": [
+        {
+          "name": "后端",
+          "slug": "backend"
+        },
+        {
+          "name": "鉴权",
+          "slug": "auth"
+        }
+      ],
+      "html": "<p>双 token 的取舍其实只有一个问题：刷新用的那个 token 存哪、怎么撤销。</p>\n<h2 id=\"t1\">两种 token 的分工</h2>\n<table>\n<thead>\n<tr>\n<th>token</th>\n<th>有效期</th>\n<th>存放位置</th>\n<th>作用</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>access</td>\n<td>15 分钟</td>\n<td>内存</td>\n<td>每个请求带上</td>\n</tr>\n<tr>\n<td>refresh</td>\n<td>30 天</td>\n<td>httpOnly cookie</td>\n<td>换一对新的</td>\n</tr>\n</tbody>\n</table>\n<p>access 放内存而不是 localStorage：XSS 拿不到，刷新页面重新换一次即可。</p>\n<h2 id=\"t2\">刷新流程</h2>\n<ul>\n<li>请求返回 401，且错误码是 token 过期；</li>\n<li>用 refresh 换一对新 token；</li>\n<li>重放原请求，<strong>且只重放一次</strong>，避免死循环。</li>\n</ul>\n<pre><code class=\"language-ts\"><span class=\"hljs-keyword\">async</span> <span class=\"hljs-keyword\">function</span> <span class=\"hljs-title function_\">request</span>(<span class=\"hljs-params\"><span class=\"hljs-attr\">input</span>: <span class=\"hljs-built_in\">string</span>, <span class=\"hljs-attr\">init</span>?: <span class=\"hljs-title class_\">RequestInit</span></span>): <span class=\"hljs-title class_\">Promise</span>&lt;<span class=\"hljs-title class_\">Response</span>&gt; {\n  <span class=\"hljs-keyword\">const</span> first = <span class=\"hljs-keyword\">await</span> <span class=\"hljs-title function_\">send</span>(input, init);\n  <span class=\"hljs-keyword\">if</span> (first.<span class=\"hljs-property\">status</span> !== <span class=\"hljs-number\">401</span>) <span class=\"hljs-keyword\">return</span> first;\n  <span class=\"hljs-keyword\">const</span> refreshed = <span class=\"hljs-keyword\">await</span> <span class=\"hljs-title function_\">refreshOnce</span>();\n  <span class=\"hljs-keyword\">return</span> refreshed ? <span class=\"hljs-title function_\">send</span>(input, init) : first;\n}\n</code></pre>\n<h2 id=\"t3\">撤销：token_version</h2>\n<p>登出、改密码要能立刻失效已有的 refresh token。做法是给用户一个自增的 <code>token_version</code>，签发时写进 claim，校验时比对；改密码就加一，旧 token 全部作废，不必遍历删除。</p>\n<blockquote>\n<p>能用一个整数解决的问题，不要用一个 token 黑名单表解决。</p>\n</blockquote>\n",
+      "headings": [
+        {
+          "level": 2,
+          "text": "两种 token 的分工",
+          "id": "t1"
+        },
+        {
+          "level": 2,
+          "text": "刷新流程",
+          "id": "t2"
+        },
+        {
+          "level": 2,
+          "text": "撤销：token_version",
+          "id": "t3"
+        }
+      ],
+      "prev": {
+        "slug": "typeorm-migration-rules",
+        "title": "TypeORM 迁移的三条纪律",
+        "track": {
+          "no": "A4",
+          "side": "A",
+          "catalog": "TB—004",
+          "accent": "v4"
+        }
+      },
+      "next": {
+        "slug": "mysql-ngram-fulltext",
+        "title": "MySQL ngram 全文索引踩坑：最短可搜长度、布尔语法与字符集",
+        "track": {
+          "no": "A2",
+          "side": "A",
+          "catalog": "TB—002",
+          "accent": "v2"
+        }
+      },
+      "contentMd": "双 token 的取舍其实只有一个问题：刷新用的那个 token 存哪、怎么撤销。\n\n## 两种 token 的分工\n\n| token | 有效期 | 存放位置 | 作用 |\n| --- | --- | --- | --- |\n| access | 15 分钟 | 内存 | 每个请求带上 |\n| refresh | 30 天 | httpOnly cookie | 换一对新的 |\n\naccess 放内存而不是 localStorage：XSS 拿不到，刷新页面重新换一次即可。\n\n## 刷新流程\n\n- 请求返回 401，且错误码是 token 过期；\n- 用 refresh 换一对新 token；\n- 重放原请求，**且只重放一次**，避免死循环。\n\n```ts\nasync function request(input: string, init?: RequestInit): Promise<Response> {\n  const first = await send(input, init);\n  if (first.status !== 401) return first;\n  const refreshed = await refreshOnce();\n  return refreshed ? send(input, init) : first;\n}\n```\n\n## 撤销：token_version\n\n登出、改密码要能立刻失效已有的 refresh token。做法是给用户一个自增的 `token_version`，签发时写进 claim，校验时比对；改密码就加一，旧 token 全部作废，不必遍历删除。\n\n> 能用一个整数解决的问题，不要用一个 token 黑名单表解决。"
+    },
+    {
+      "slug": "typeorm-migration-rules",
+      "title": "TypeORM 迁移的三条纪律",
+      "summary": "把 migrationsRun 设成 true 会省事，也会在某天早上把生产库改坏。三条纪律，都是踩出来的。",
+      "publishedAt": "2026-10-08T01:20:00.000Z",
+      "updatedAt": "2026-10-08T01:20:00.000Z",
+      "readingMinutes": 1,
+      "track": {
+        "no": "A4",
+        "side": "A",
+        "catalog": "TB—004",
+        "accent": "v4"
+      },
+      "tags": [
+        {
+          "name": "后端",
+          "slug": "backend"
+        },
+        {
+          "name": "工程化",
+          "slug": "engineering"
+        }
+      ],
+      "html": "<p><code>migrationsRun</code> 设成 <code>true</code> 会省事，也会在某天早上把生产库改坏。三条纪律，都是踩出来的。</p>\n<h2 id=\"t1\">一、迁移只前进，不回滚</h2>\n<p><code>down()</code> 要写，但只在本地用。线上出问题要用「再写一个迁移改回去」，而不是回滚：回滚依赖的历史状态，线上早就不是那样了。</p>\n<h2 id=\"t2\">二、迁移里不写业务逻辑</h2>\n<p>迁移只做结构变更和必要的数据搬迁。要算派生值，先加列、再用脚本补数据、最后加约束；把三步塞进一个迁移，出问题只能整段重跑。</p>\n<h2 id=\"t3\">三、结构与代码要能各自回滚</h2>\n<p>顺序是：先上兼容新旧两种结构的迁移，再发代码，最后收紧约束。</p>\n<pre><code class=\"language-ts\"><span class=\"hljs-comment\">// 第一步：允许为空，老代码照常写入</span>\n<span class=\"hljs-keyword\">await</span> queryRunner.<span class=\"hljs-title function_\">query</span>(<span class=\"hljs-string\">&#x27;ALTER TABLE posts ADD COLUMN published_seq int unsigned NULL&#x27;</span>);\n<span class=\"hljs-comment\">// 第二步（下一版）：补完数据后再加唯一索引</span>\n<span class=\"hljs-keyword\">await</span> queryRunner.<span class=\"hljs-title function_\">query</span>(<span class=\"hljs-string\">&#x27;ALTER TABLE posts ADD UNIQUE KEY uk_posts_published_seq (published_seq)&#x27;</span>);\n</code></pre>\n<blockquote>\n<p>迁移文件一旦合进主干就不再修改；改错了，就再写一个。</p>\n</blockquote>\n",
+      "headings": [
+        {
+          "level": 2,
+          "text": "一、迁移只前进，不回滚",
+          "id": "t1"
+        },
+        {
+          "level": 2,
+          "text": "二、迁移里不写业务逻辑",
+          "id": "t2"
+        },
+        {
+          "level": 2,
+          "text": "三、结构与代码要能各自回滚",
+          "id": "t3"
+        }
+      ],
+      "prev": {
+        "slug": "markdown-pipeline-consistency",
+        "title": "Markdown 渲染管线怎么保持一致",
+        "track": {
+          "no": "B1",
+          "side": "B",
+          "catalog": "TB—005",
+          "accent": "v1"
+        }
+      },
+      "next": {
+        "slug": "jwt-dual-token",
+        "title": "JWT 双 token 实战：15 分钟与 30 天",
+        "track": {
+          "no": "A3",
+          "side": "A",
+          "catalog": "TB—003",
+          "accent": "v3"
+        }
+      },
+      "contentMd": "`migrationsRun` 设成 `true` 会省事，也会在某天早上把生产库改坏。三条纪律，都是踩出来的。\n\n## 一、迁移只前进，不回滚\n\n`down()` 要写，但只在本地用。线上出问题要用「再写一个迁移改回去」，而不是回滚：回滚依赖的历史状态，线上早就不是那样了。\n\n## 二、迁移里不写业务逻辑\n\n迁移只做结构变更和必要的数据搬迁。要算派生值，先加列、再用脚本补数据、最后加约束；把三步塞进一个迁移，出问题只能整段重跑。\n\n## 三、结构与代码要能各自回滚\n\n顺序是：先上兼容新旧两种结构的迁移，再发代码，最后收紧约束。\n\n```ts\n// 第一步：允许为空，老代码照常写入\nawait queryRunner.query('ALTER TABLE posts ADD COLUMN published_seq int unsigned NULL');\n// 第二步（下一版）：补完数据后再加唯一索引\nawait queryRunner.query('ALTER TABLE posts ADD UNIQUE KEY uk_posts_published_seq (published_seq)');\n```\n\n> 迁移文件一旦合进主干就不再修改；改错了，就再写一个。"
+    },
+    {
+      "slug": "markdown-pipeline-consistency",
+      "title": "Markdown 渲染管线怎么保持一致",
+      "summary": "后台预览正常、线上排版错乱、导出的 JSON 又是另一种样子——这是渲染逻辑写了两份的典型症状。",
+      "publishedAt": "2026-09-30T06:00:00.000Z",
+      "updatedAt": "2026-09-30T06:00:00.000Z",
+      "readingMinutes": 1,
+      "track": {
+        "no": "B1",
+        "side": "B",
+        "catalog": "TB—005",
+        "accent": "v1"
+      },
+      "tags": [
+        {
+          "name": "工程化",
+          "slug": "engineering"
+        },
+        {
+          "name": "构建",
+          "slug": "build"
+        }
+      ],
+      "html": "<p>同一篇文章，后台预览正常、线上排版错乱、导出的 JSON 又是另一种样子。这是渲染逻辑写了两份的典型症状。</p>\n<h2 id=\"t1\">一份实现，三个调用方</h2>\n<ul>\n<li>预渲染：构建期把 Markdown 渲染成 HTML 写进静态页；</li>\n<li>后台预览：编辑时即时渲染；</li>\n<li>导出快照：备份与迁移。</li>\n</ul>\n<p>三处的入参出参完全一致，因此规则只能写一次——放在共享包里，两端都引它。</p>\n<h2 id=\"t2\">目录锚点为什么不用标题文字</h2>\n<p>用标题生成锚点看起来更友好，但改标题会让旧链接失效，重名标题还要去重。</p>\n<pre><code class=\"language-ts\"><span class=\"hljs-comment\">// 解析阶段就分配锚点，HTML 与 headings 列表必然用同一套编号</span>\ntoken.<span class=\"hljs-title function_\">attrSet</span>(<span class=\"hljs-string\">&#x27;id&#x27;</span>, <span class=\"hljs-string\">`t<span class=\"hljs-subst\">${counter}</span>`</span>);\n</code></pre>\n<p>代价是地址不好看（<code>#t3</code>），收益是链接永久有效、正文与目录永远一致。</p>\n<h2 id=\"t3\">阅读时长也是派生值</h2>\n<p>字数除以 400，加上代码行数除以 20，取整并保底 1 分钟。这个值由后端算好随详情返回，前端只负责显示。</p>\n<blockquote>\n<p>派生值只算一次，比「两处算得一样」可靠得多。</p>\n</blockquote>\n",
+      "headings": [
+        {
+          "level": 2,
+          "text": "一份实现，三个调用方",
+          "id": "t1"
+        },
+        {
+          "level": 2,
+          "text": "目录锚点为什么不用标题文字",
+          "id": "t2"
+        },
+        {
+          "level": 2,
+          "text": "阅读时长也是派生值",
+          "id": "t3"
+        }
+      ],
+      "prev": {
+        "slug": "pnpm-workspace-minimal",
+        "title": "pnpm workspace 的最小可行结构",
+        "track": {
+          "no": "B2",
+          "side": "B",
+          "catalog": "TB—006",
+          "accent": "v2"
+        }
+      },
+      "next": {
+        "slug": "typeorm-migration-rules",
+        "title": "TypeORM 迁移的三条纪律",
+        "track": {
+          "no": "A4",
+          "side": "A",
+          "catalog": "TB—004",
+          "accent": "v4"
+        }
+      },
+      "contentMd": "同一篇文章，后台预览正常、线上排版错乱、导出的 JSON 又是另一种样子。这是渲染逻辑写了两份的典型症状。\n\n## 一份实现，三个调用方\n\n- 预渲染：构建期把 Markdown 渲染成 HTML 写进静态页；\n- 后台预览：编辑时即时渲染；\n- 导出快照：备份与迁移。\n\n三处的入参出参完全一致，因此规则只能写一次——放在共享包里，两端都引它。\n\n## 目录锚点为什么不用标题文字\n\n用标题生成锚点看起来更友好，但改标题会让旧链接失效，重名标题还要去重。\n\n```ts\n// 解析阶段就分配锚点，HTML 与 headings 列表必然用同一套编号\ntoken.attrSet('id', `t${counter}`);\n```\n\n代价是地址不好看（`#t3`），收益是链接永久有效、正文与目录永远一致。\n\n## 阅读时长也是派生值\n\n字数除以 400，加上代码行数除以 20，取整并保底 1 分钟。这个值由后端算好随详情返回，前端只负责显示。\n\n> 派生值只算一次，比「两处算得一样」可靠得多。"
+    },
+    {
+      "slug": "pnpm-workspace-minimal",
+      "title": "pnpm workspace 的最小可行结构",
+      "summary": "三个包：前台、接口、共享契约。再少就没有意义，再多就是给自己找事。",
+      "publishedAt": "2026-09-21T14:15:00.000Z",
+      "updatedAt": "2026-09-21T14:15:00.000Z",
+      "readingMinutes": 1,
+      "track": {
+        "no": "B2",
+        "side": "B",
+        "catalog": "TB—006",
+        "accent": "v2"
+      },
+      "tags": [
+        {
+          "name": "工程化",
+          "slug": "engineering"
+        },
+        {
+          "name": "构建",
+          "slug": "build"
+        }
+      ],
+      "html": "<p>三个包：前台、接口、共享契约。没有比这更小的可行结构了。</p>\n<h2 id=\"t1\">目录</h2>\n<pre><code class=\"language-text\">tiny-blogs/\n  apps/web        # 前台\n  apps/api        # 接口\n  packages/shared # 契约：类型、常量、纯函数\n</code></pre>\n<h2 id=\"t2\">为什么共享包不出双产物</h2>\n<p>接口是 CommonJS（装饰器元数据依赖它），前台是 ESM。第一反应是双产物，但那意味着两套构建、两份 sourcemap、两种解析行为。</p>\n<p>现在的做法是只出 CJS 单产物，前台通过构建器的 <code>commonjsOptions.include</code> 把它纳入转换范围。代价是构建配置里多一行，收益是共享包只有一种行为。</p>\n<pre><code class=\"language-ts\"><span class=\"hljs-attr\">commonjsOptions</span>: { <span class=\"hljs-attr\">include</span>: [<span class=\"hljs-regexp\">/node_modules/</span>, <span class=\"hljs-regexp\">/packages\\/shared\\//</span>] }\n</code></pre>\n<h2 id=\"t3\">脚本收敛在根目录</h2>\n<p><code>pnpm -r</code> 递归跑，根 <code>package.json</code> 只留人真正会敲的命令：<code>dev</code>、<code>build</code>、<code>test</code>、<code>db:reset</code>。</p>\n<blockquote>\n<p>workspace 的收益不是少装一次依赖，而是改了契约立刻能验证两端都还编译得过。</p>\n</blockquote>\n",
+      "headings": [
+        {
+          "level": 2,
+          "text": "目录",
+          "id": "t1"
+        },
+        {
+          "level": 2,
+          "text": "为什么共享包不出双产物",
+          "id": "t2"
+        },
+        {
+          "level": 2,
+          "text": "脚本收敛在根目录",
+          "id": "t3"
+        }
+      ],
+      "prev": {
+        "slug": "render-function-escape-hatch",
+        "title": "把渲染函数当成模板的逃生舱",
+        "track": {
+          "no": "B3",
+          "side": "B",
+          "catalog": "TB—007",
+          "accent": "v3"
+        }
+      },
+      "next": {
+        "slug": "markdown-pipeline-consistency",
+        "title": "Markdown 渲染管线怎么保持一致",
+        "track": {
+          "no": "B1",
+          "side": "B",
+          "catalog": "TB—005",
+          "accent": "v1"
+        }
+      },
+      "contentMd": "三个包：前台、接口、共享契约。没有比这更小的可行结构了。\n\n## 目录\n\n```text\ntiny-blogs/\n  apps/web        # 前台\n  apps/api        # 接口\n  packages/shared # 契约：类型、常量、纯函数\n```\n\n## 为什么共享包不出双产物\n\n接口是 CommonJS（装饰器元数据依赖它），前台是 ESM。第一反应是双产物，但那意味着两套构建、两份 sourcemap、两种解析行为。\n\n现在的做法是只出 CJS 单产物，前台通过构建器的 `commonjsOptions.include` 把它纳入转换范围。代价是构建配置里多一行，收益是共享包只有一种行为。\n\n```ts\ncommonjsOptions: { include: [/node_modules/, /packages\\/shared\\//] }\n```\n\n## 脚本收敛在根目录\n\n`pnpm -r` 递归跑，根 `package.json` 只留人真正会敲的命令：`dev`、`build`、`test`、`db:reset`。\n\n> workspace 的收益不是少装一次依赖，而是改了契约立刻能验证两端都还编译得过。"
+    },
+    {
+      "slug": "render-function-escape-hatch",
+      "title": "把渲染函数当成模板的逃生舱",
+      "summary": "模板能表达九成的界面。剩下那一成硬写模板会变成一堆 v-if 的意大利面，这时候换渲染函数。",
+      "publishedAt": "2026-09-12T02:05:00.000Z",
+      "updatedAt": "2026-09-12T02:05:00.000Z",
+      "readingMinutes": 2,
+      "track": {
+        "no": "B3",
+        "side": "B",
+        "catalog": "TB—007",
+        "accent": "v3"
+      },
+      "tags": [
+        {
+          "name": "Vue",
+          "slug": "vue"
+        },
+        {
+          "name": "工程化",
+          "slug": "engineering"
+        }
+      ],
+      "html": "<p>模板能表达九成的界面。剩下那一成，硬写模板会变成一堆 <code>v-if</code> 的意大利面。</p>\n<h2 id=\"t1\">什么时候该换</h2>\n<ul>\n<li>需要根据数据动态选择标签名；</li>\n<li>需要精确控制子节点的位置与数量；</li>\n<li>需要把插槽内容重新组合。</li>\n</ul>\n<h2 id=\"t2\">例子：把目录拍平</h2>\n<pre><code class=\"language-ts\"><span class=\"hljs-keyword\">const</span> <span class=\"hljs-title class_\">TocList</span> = <span class=\"hljs-title function_\">defineComponent</span>({\n  <span class=\"hljs-attr\">props</span>: { <span class=\"hljs-attr\">headings</span>: { <span class=\"hljs-attr\">type</span>: <span class=\"hljs-title class_\">Array</span> <span class=\"hljs-keyword\">as</span> <span class=\"hljs-title class_\">PropType</span>&lt;<span class=\"hljs-title class_\">Heading</span>[]&gt;, <span class=\"hljs-attr\">required</span>: <span class=\"hljs-literal\">true</span> } },\n  <span class=\"hljs-title function_\">setup</span>(<span class=\"hljs-params\">props</span>) {\n    <span class=\"hljs-keyword\">return</span> <span class=\"hljs-function\">() =&gt;</span>\n      <span class=\"hljs-title function_\">h</span>(\n        <span class=\"hljs-string\">&#x27;ol&#x27;</span>,\n        props.<span class=\"hljs-property\">headings</span>.<span class=\"hljs-title function_\">map</span>(<span class=\"hljs-function\">(<span class=\"hljs-params\">heading</span>) =&gt;</span>\n          <span class=\"hljs-title function_\">h</span>(<span class=\"hljs-string\">&#x27;li&#x27;</span>, { <span class=\"hljs-attr\">class</span>: heading.<span class=\"hljs-property\">level</span> === <span class=\"hljs-number\">3</span> ? <span class=\"hljs-string\">&#x27;lv3&#x27;</span> : <span class=\"hljs-literal\">undefined</span> }, [\n            <span class=\"hljs-title function_\">h</span>(<span class=\"hljs-string\">&#x27;a&#x27;</span>, { <span class=\"hljs-attr\">href</span>: <span class=\"hljs-string\">`#<span class=\"hljs-subst\">${heading.id}</span>`</span> }, heading.<span class=\"hljs-property\">text</span>),\n          ]),\n        ),\n      );\n  },\n});\n</code></pre>\n<h2 id=\"t3\">代价</h2>\n<p>渲染函数没有模板的静态提升，diff 时也少了一层编译期优化。所以只在模板真的写不干净的地方用它，不要为了炫技把整页改成 <code>h()</code>。</p>\n<blockquote>\n<p>逃生舱的意义是逃生，不是住进去。</p>\n</blockquote>\n",
+      "headings": [
+        {
+          "level": 2,
+          "text": "什么时候该换",
+          "id": "t1"
+        },
+        {
+          "level": 2,
+          "text": "例子：把目录拍平",
+          "id": "t2"
+        },
+        {
+          "level": 2,
+          "text": "代价",
+          "id": "t3"
+        }
+      ],
+      "prev": {
+        "slug": "compose-mysql-only",
+        "title": "compose 只跑 MySQL 的理由",
+        "track": {
+          "no": "B4",
+          "side": "B",
+          "catalog": "TB—008",
+          "accent": "v4"
+        }
+      },
+      "next": {
+        "slug": "pnpm-workspace-minimal",
+        "title": "pnpm workspace 的最小可行结构",
+        "track": {
+          "no": "B2",
+          "side": "B",
+          "catalog": "TB—006",
+          "accent": "v2"
+        }
+      },
+      "contentMd": "模板能表达九成的界面。剩下那一成，硬写模板会变成一堆 `v-if` 的意大利面。\n\n## 什么时候该换\n\n- 需要根据数据动态选择标签名；\n- 需要精确控制子节点的位置与数量；\n- 需要把插槽内容重新组合。\n\n## 例子：把目录拍平\n\n```ts\nconst TocList = defineComponent({\n  props: { headings: { type: Array as PropType<Heading[]>, required: true } },\n  setup(props) {\n    return () =>\n      h(\n        'ol',\n        props.headings.map((heading) =>\n          h('li', { class: heading.level === 3 ? 'lv3' : undefined }, [\n            h('a', { href: `#${heading.id}` }, heading.text),\n          ]),\n        ),\n      );\n  },\n});\n```\n\n## 代价\n\n渲染函数没有模板的静态提升，diff 时也少了一层编译期优化。所以只在模板真的写不干净的地方用它，不要为了炫技把整页改成 `h()`。\n\n> 逃生舱的意义是逃生，不是住进去。"
+    },
+    {
+      "slug": "compose-mysql-only",
+      "title": "compose 只跑 MySQL 的理由",
+      "summary": "本地环境只容器化最容易漂移的那部分：数据库。应用留在宿主机上跑，热更新和断点都更省事。",
+      "publishedAt": "2026-09-03T09:45:00.000Z",
+      "updatedAt": "2026-09-03T09:45:00.000Z",
+      "readingMinutes": 2,
+      "track": {
+        "no": "B4",
+        "side": "B",
+        "catalog": "TB—008",
+        "accent": "v4"
+      },
+      "tags": [
+        {
+          "name": "后端",
+          "slug": "backend"
+        },
+        {
+          "name": "工程化",
+          "slug": "engineering"
+        }
+      ],
+      "html": "<p>本地开发用 docker compose，但只跑一个 MySQL 容器，接口和前台都在宿主机上跑。</p>\n<h2 id=\"t1\">为什么不全都容器化</h2>\n<ol>\n<li>热更新：<code>--watch</code> 在宿主机上比在挂载卷里快一个数量级；</li>\n<li>调试：断点直接打在源码路径上，不用配路径映射；</li>\n<li>依赖：<code>node_modules</code> 不用在容器与宿主之间来回同步。</li>\n</ol>\n<h2 id=\"t2\">只跑 MySQL 的理由</h2>\n<p>数据库是唯一「装在宿主机上很麻烦」的东西：版本要固定、字符集要固定、初始化要可重复。容器刚好解决这三件事。</p>\n<pre><code class=\"language-yaml\"><span class=\"hljs-attr\">services:</span>\n  <span class=\"hljs-attr\">db:</span>\n    <span class=\"hljs-attr\">image:</span> <span class=\"hljs-string\">mysql:8.4</span>\n    <span class=\"hljs-attr\">command:</span> <span class=\"hljs-string\">--character-set-server=utf8mb4</span> <span class=\"hljs-string\">--collation-server=utf8mb4_0900_ai_ci</span>\n    <span class=\"hljs-attr\">environment:</span>\n      <span class=\"hljs-attr\">MYSQL_DATABASE:</span> <span class=\"hljs-string\">tiny_blogs</span>\n      <span class=\"hljs-attr\">MYSQL_ROOT_PASSWORD:</span> <span class=\"hljs-string\">dev_only_password</span>\n    <span class=\"hljs-attr\">ports:</span> [<span class=\"hljs-string\">&#x27;3306:3306&#x27;</span>]\n    <span class=\"hljs-attr\">healthcheck:</span>\n      <span class=\"hljs-attr\">test:</span> [<span class=\"hljs-string\">&#x27;CMD&#x27;</span>, <span class=\"hljs-string\">&#x27;mysqladmin&#x27;</span>, <span class=\"hljs-string\">&#x27;ping&#x27;</span>, <span class=\"hljs-string\">&#x27;-h&#x27;</span>, <span class=\"hljs-string\">&#x27;127.0.0.1&#x27;</span>]\n      <span class=\"hljs-attr\">interval:</span> <span class=\"hljs-string\">3s</span>\n      <span class=\"hljs-attr\">retries:</span> <span class=\"hljs-number\">20</span>\n</code></pre>\n<h2 id=\"t3\">一条命令起库</h2>\n<p><code>db:up</code> 等到健康检查通过再返回，这样迁移脚本不用自己重试。</p>\n<blockquote>\n<p>把环境里最容易漂移的那部分锁住就够了，不必把整个开发流程塞进容器。</p>\n</blockquote>\n",
+      "headings": [
+        {
+          "level": 2,
+          "text": "为什么不全都容器化",
+          "id": "t1"
+        },
+        {
+          "level": 2,
+          "text": "只跑 MySQL 的理由",
+          "id": "t2"
+        },
+        {
+          "level": 2,
+          "text": "一条命令起库",
+          "id": "t3"
+        }
+      ],
+      "prev": null,
+      "next": {
+        "slug": "render-function-escape-hatch",
+        "title": "把渲染函数当成模板的逃生舱",
+        "track": {
+          "no": "B3",
+          "side": "B",
+          "catalog": "TB—007",
+          "accent": "v3"
+        }
+      },
+      "contentMd": "本地开发用 docker compose，但只跑一个 MySQL 容器，接口和前台都在宿主机上跑。\n\n## 为什么不全都容器化\n\n1. 热更新：`--watch` 在宿主机上比在挂载卷里快一个数量级；\n2. 调试：断点直接打在源码路径上，不用配路径映射；\n3. 依赖：`node_modules` 不用在容器与宿主之间来回同步。\n\n## 只跑 MySQL 的理由\n\n数据库是唯一「装在宿主机上很麻烦」的东西：版本要固定、字符集要固定、初始化要可重复。容器刚好解决这三件事。\n\n```yaml\nservices:\n  db:\n    image: mysql:8.4\n    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_0900_ai_ci\n    environment:\n      MYSQL_DATABASE: tiny_blogs\n      MYSQL_ROOT_PASSWORD: dev_only_password\n    ports: ['3306:3306']\n    healthcheck:\n      test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1']\n      interval: 3s\n      retries: 20\n```\n\n## 一条命令起库\n\n`db:up` 等到健康检查通过再返回，这样迁移脚本不用自己重试。\n\n> 把环境里最容易漂移的那部分锁住就够了，不必把整个开发流程塞进容器。"
+    }
+  ],
+  "tags": [
+    {
+      "name": "工程化",
+      "slug": "engineering",
+      "count": 5
+    },
+    {
+      "name": "后端",
+      "slug": "backend",
+      "count": 4
+    },
+    {
+      "name": "构建",
+      "slug": "build",
+      "count": 3
+    },
+    {
+      "name": "Vue",
+      "slug": "vue",
+      "count": 2
+    },
+    {
+      "name": "MySQL",
+      "slug": "mysql",
+      "count": 1
+    },
+    {
+      "name": "鉴权",
+      "slug": "auth",
+      "count": 1
+    }
+  ],
+  "archive": [
+    {
+      "year": 2026,
+      "count": 8,
+      "months": [
+        {
+          "month": 11,
+          "posts": [
+            {
+              "slug": "vite-ssg-prerender",
+              "title": "用 vite-ssg 给 Vue 3 博客做预渲染：SEO 与首屏的取舍",
+              "track": {
+                "no": "A1",
+                "side": "A",
+                "catalog": "TB—001",
+                "accent": "v1"
+              }
+            }
+          ]
+        },
+        {
+          "month": 10,
+          "posts": [
+            {
+              "slug": "typeorm-migration-rules",
+              "title": "TypeORM 迁移的三条纪律",
+              "track": {
+                "no": "A4",
+                "side": "A",
+                "catalog": "TB—004",
+                "accent": "v4"
+              }
+            },
+            {
+              "slug": "jwt-dual-token",
+              "title": "JWT 双 token 实战：15 分钟与 30 天",
+              "track": {
+                "no": "A3",
+                "side": "A",
+                "catalog": "TB—003",
+                "accent": "v3"
+              }
+            },
+            {
+              "slug": "mysql-ngram-fulltext",
+              "title": "MySQL ngram 全文索引踩坑：最短可搜长度、布尔语法与字符集",
+              "track": {
+                "no": "A2",
+                "side": "A",
+                "catalog": "TB—002",
+                "accent": "v2"
+              }
+            }
+          ]
+        },
+        {
+          "month": 9,
+          "posts": [
+            {
+              "slug": "compose-mysql-only",
+              "title": "compose 只跑 MySQL 的理由",
+              "track": {
+                "no": "B4",
+                "side": "B",
+                "catalog": "TB—008",
+                "accent": "v4"
+              }
+            },
+            {
+              "slug": "render-function-escape-hatch",
+              "title": "把渲染函数当成模板的逃生舱",
+              "track": {
+                "no": "B3",
+                "side": "B",
+                "catalog": "TB—007",
+                "accent": "v3"
+              }
+            },
+            {
+              "slug": "pnpm-workspace-minimal",
+              "title": "pnpm workspace 的最小可行结构",
+              "track": {
+                "no": "B2",
+                "side": "B",
+                "catalog": "TB—006",
+                "accent": "v2"
+              }
+            },
+            {
+              "slug": "markdown-pipeline-consistency",
+              "title": "Markdown 渲染管线怎么保持一致",
+              "track": {
+                "no": "B1",
+                "side": "B",
+                "catalog": "TB—005",
+                "accent": "v1"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

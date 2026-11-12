@@ -1,14 +1,14 @@
 /**
  * 路由表。
  *
- * 预渲染纪律（票 10 会按这张表生成静态页）：
+ * 预渲染纪律（prerender-routes.ts 会按这张表生成静态页）：
  * - 每条路由都是一个**具名**的页面，slug 只作为参数；
  * - 后台入口 `/admin` 必须是懒加载，且不得进入预渲染范围（那会在公开站点上生成后台页面）；
  * - 关于页虽然是前台页面，但也懒加载：它是唯一会把 `markdown-it` 拖进 chunk 的页面
  *   （正文来自本地 Markdown），不能让它占用主包；
  * - 兜底路由放在最后，保证未知路径有 404 而不是白屏。
  *
- * 守卫纪律（票 08）：鉴权判定放在**路由层**而不是组件 `onMounted`。
+ * 守卫纪律：鉴权判定放在**路由层**而不是组件 `onMounted`。
  * 后者的问题不是"多了几行"，而是页面在拿到结论前已经渲染过一帧——
  * 未登录的访客会先看见后台骨架再被弹走，中间那一帧还可能发起真实的后台请求。
  */
@@ -39,7 +39,7 @@ export const routes: RouteRecordRaw[] = [
   { path: '/', name: 'home', component: HomeView },
   { path: '/posts', name: 'posts', component: PostListView },
   { path: '/posts/:slug', name: 'post', component: PostDetailView },
-  // 标签总览与标签筛选是两张不同的页面，只是筛选页复用了列表页组件（票 07 要求复用）。
+  // 标签总览与标签筛选是两张不同的页面，只是筛选页复用了列表页组件（设计要求复用）。
   { path: '/tags', name: 'tags', component: TagsView },
   { path: '/tags/:slug', name: 'tag', component: PostListView },
   { path: '/archives', name: 'archives', component: ArchivesView },

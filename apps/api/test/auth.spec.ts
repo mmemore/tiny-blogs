@@ -15,7 +15,7 @@ import { bearer, extractRefreshCookie, login } from './helpers/http';
 const PASSWORD = 'correct-horse-battery-staple';
 
 /**
- * 票 03：鉴权闭环，全部走 HTTP 边界（supertest 打真实 Nest 应用 + 真实 MySQL）。
+ * 鉴权闭环，全部走 HTTP 边界（supertest 打真实 Nest 应用 + 真实 MySQL）。
  *
  * 每个攻击场景用独立账号，避免"撤销全部会话"这类副作用污染其它用例。
  */

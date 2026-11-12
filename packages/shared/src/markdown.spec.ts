@@ -1,5 +1,5 @@
 /**
- * `renderMarkdown` / `estimateReadingMinutes` 的纯函数单测（票 05）。
+ * `renderMarkdown` / `estimateReadingMinutes` 的纯函数单测。
  *
  * 这些用例是"派生规则只写一次"的护栏：前台预渲染、详情页、导出快照都调这两个函数，
  * 只要它们的行为被钉住，四处展示就不可能分叉。

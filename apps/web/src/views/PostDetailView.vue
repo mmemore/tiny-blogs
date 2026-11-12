@@ -2,7 +2,7 @@
 /**
  * 文章详情（设计 03 屏）：折页封套 + 正文 + 目录 + 上下篇。
  *
- * 预渲染纪律（票 10 的前提）：
+ * 预渲染纪律：
  * - 数据在 setup 阶段发起，`onServerPrefetch` 等它落地，产物 HTML 里就有正文；
  * - meta 全部走 `usePageMeta`，绝不在 `onMounted` 里改 `document.title`；
  * - 正文只消费接口给好的 `html`，**浏览器端不引 markdown-it**（渲染在服务端完成）。

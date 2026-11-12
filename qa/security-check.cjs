@@ -1,5 +1,5 @@
 /**
- * 安全断言（票 09）：
+ * 安全断言：
  * 1. refresh cookie 的 httpOnly / SameSite=Strict / Path=/api/auth（看登录响应头，值不回显）；
  * 2. 6 MB 上传 → 422 FILE_TOO_LARGE；
  * 3. 伪装 .exe → 422 UNSUPPORTED_MEDIA_TYPE；

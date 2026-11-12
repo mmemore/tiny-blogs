@@ -1,7 +1,7 @@
 /**
  * `<head>` 管理：标题、描述、OG / Twitter 卡片。
  *
- * 纪律（票 07）：meta 只能通过 `usePageMeta` 声明，**不允许**在 `onMounted` 里改 `document.title`。
+ * 纪律：meta 只能通过 `usePageMeta` 声明，**不允许**在 `onMounted` 里改 `document.title`。
  * 原因：预渲染器在 Node 里渲染时不会执行 `onMounted`，那样产出的 HTML head 就是空的，
  * 而线上水合后又变成另一套 title —— 搜索引擎与用户看到的内容会不一致。
  * `unhead` 在预渲染时会把这些声明写进 HTML，水合时复用同一份状态。

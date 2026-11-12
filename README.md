@@ -87,6 +87,8 @@ pnpm smoke
 
 发布 = **重新生成一份完整的静态站并整体替换**，中间不会出现半成品。
 
+### 3.1 本地构建（验证用）
+
 ```bash
 # API 必须在跑（构建期要从它取快照），然后：
 pnpm release
@@ -100,24 +102,41 @@ pnpm smoke        # 建议每次都跑：断言项数随快照篇数浮动，失
    落到 `.release/snapshot.json`（gitignored）。拿不到快照就**直接失败**，不会产出半成品。
 2. 用快照里的 slug 清单作为预渲染路由（`/admin` 前缀与带参路由永不参与）。
 3. `vite-ssg` 全量预渲染到 `dist-next`：每篇文章一个 `dist/posts/<slug>/index.html`，
-   head 在构建期就写死，HTML 里直接带正文。
+   head 在构建期就写死，HTML 里直接带正文。构建运行在**静态内容模式**
+   （`VITE_STATIC_CONTENT=1`）：页面取数走内联快照而非 HTTP，与 CI 产物完全一致；
+   运行时快照（`dist/content/snapshot.json`）与上传图片（`dist/uploads/`）一并进入产物。
 4. 成功后原子替换：`dist` → `dist-prev` → `dist-next` 改名 `dist`；任何一步失败都保留
    上一版 `dist`，并把失败的产物归档到 `.release/trash/`（不递归删除，便于排查）。
 
 注意区分：`pnpm build` 是普通 SPA 构建（不预渲染、直接写 `apps/web/dist`），
 日常交付请走 `pnpm release`，不要用它代替。
 
-部署只需要两件事：
+### 3.2 发布到线上（GitHub Pages，零服务器）
 
-- 把 `apps/web/dist` 当静态目录发布（目录结构即 URL 结构，不需要 rewrite 规则；
-  未知路径建议兜底 rewrite 到 `/index.html`，让前端 404 页自己接管）。
-- 反向代理把 `/api` 与 `/uploads` 转给 API 进程（同源，见 [ADR-0005](docs/adr/0005-monorepo-and-dev-environment.md)）。
+线上托管在 GitHub Pages，源码仓库即部署仓库。日常发文只有一条命令：
 
-正式发布前把 `.env` 里的 `VITE_SITE_URL` 设成真实域名再跑 `pnpm release`：
+```bash
+pnpm ship    # 导出快照 → git 提交 content/ → 推送，CI 自动构建并发布
+```
+
+- `pnpm content:export`：把本地 API 的公开内容快照写入 `content/snapshot.json`，
+  并把上传图片镜像到 `content/uploads/`（两者都是公开内容，入库不涉密）；
+- 推送到 `main` 后，`.github/workflows/deploy.yml` 从 `content/` 读取快照
+  全量预渲染并发布——CI 上没有 API、没有数据库、也没有任何 secret；
+- 本地 `pnpm release` + `pnpm smoke` 可随时演练与 CI 完全一致的构建。
+
+仓库配置（一次性）：Settings → Pages → Build and deployment →
+Source 选 "GitHub Actions"。部署参数（子路径 / 站点地址）写在 workflow 的
+`env` 里：`VITE_SITE_BASE` 必须与仓库名一致（项目站点形如 `/tiny-blogs/`），
+绑定自定义域名后同步更新 `VITE_SITE_URL`。
+
+后台只在你本地运行（`pnpm dev`），线上没有后台、没有 API，静态站上
+`/admin` 路由页面虽然可被 SPA 渲染，但它依赖的 API 不存在，形同虚设。
+
+正式发布前把 `.env` 里的 `VITE_SITE_URL` 设成真实地址再跑 `pnpm release`：
 `og:url` / `og:image` / 规范链接都由它拼出（不设的话会带上 dev 端口）。
 后台登录态是「内存 access token + httpOnly refresh cookie」
-（见 [ADR-0003](docs/adr/0003-jwt-dual-token-auth.md)），所以后台必须与 API 同源，
-且发布静态产物不会影响后台登录。
+（见 [ADR-0003](docs/adr/0003-jwt-dual-token-auth.md)），所以后台必须与 API 同源。
 
 ---
 
@@ -142,7 +161,8 @@ apps/web            Vue 3 前端（同一份代码既是 SPA 也是预渲染源�
   src/views/        前台页面；src/views/admin/ 后台页面（懒加载，不进首屏）
   src/composables/  useAsyncData（可预渲染的取数原语）、usePageMeta（head 声明）
 packages/shared     前后端共用契约：类型、Markdown 渲染器、slug/分页纯函数（CJS 单产物）
-scripts/            release.mjs（发布编排）、smoke.mjs（构建冒烟）
+scripts/            release.mjs（发布编排）、export-content.mjs / ship.mjs（线上发布）、smoke.mjs（构建冒烟）
+content/            线上构建的数据源：快照 JSON + 上传图片镜像（由 pnpm ship 维护）
 docs/adr            架构决策记录
 qa/                 浏览器端 E2E 与安全断言脚本（非 CI 门禁）
 ```
@@ -166,3 +186,7 @@ qa/                 浏览器端 E2E 与安全断言脚本（非 CI 门禁）
 5. **发布有约 1 分钟的窗口期**：全量重建需要 2 分钟左右（本机实测 116–167 s），
    建好后原子替换。这期间线上仍是上一版内容——这是 [ADR-0004](docs/adr/0004-mysql-content-with-full-rebuild.md)
    明确的代价，换掉它需要引入增量渲染。
+6. **静态模式的全站搜索是子串匹配**：GitHub Pages 部署形态下没有 MySQL，
+   `?q=` 退化为"标题 + 摘要 + 原文"的大小写不敏感子串匹配（见
+   `apps/web/src/api/snapshot-queries.ts`），与 API 模式的 ngram 全文检索结果
+   可能略有差异。对个人博客的文章量差异可忽略。

@@ -31,7 +31,7 @@ function flattenValidationErrors(errors: readonly ValidationError[]): string {
  * 全局校验管道。
  *
  * 与 Nest 默认行为的唯一差别：入参校验失败返回 **422** 而不是 400
- * （票 04 验收项），错误体仍是统一信封 `{ error: { code, message } }`。
+ * 错误体仍是统一信封 `{ error: { code, message } }`。
  *
  * @returns 配置好的 `ValidationPipe`。
  */

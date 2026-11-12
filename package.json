@@ -24,6 +24,8 @@
     "db:reset": "pnpm --filter @tiny-blogs/api db:reset",
     "db:schema": "pnpm --filter @tiny-blogs/api db:schema",
     "release": "node scripts/release.mjs",
+    "content:export": "node scripts/export-content.mjs",
+    "ship": "node scripts/ship.mjs",
     "smoke": "node scripts/smoke.mjs"
   },
   "devDependencies": {

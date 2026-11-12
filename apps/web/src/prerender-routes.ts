@@ -1,5 +1,5 @@
 /**
- * 预渲染路由清单（票 10）。
+ * 预渲染路由清单。
  *
  * 纪律：**路由只来自快照**。`pnpm release` 先拉 `ContentSnapshot`，把已发布 slug 与
  * 标签 slug 写进进程环境变量（`PRERENDER_POST_SLUGS` / `PRERENDER_TAG_SLUGS`），

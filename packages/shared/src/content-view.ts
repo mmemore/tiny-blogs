@@ -118,7 +118,7 @@ export const DEFAULT_ADMIN_PAGE_SIZE = 20;
 /**
  * 站点默认元信息。
  *
- * v1 只有一个站点，不引配置项；票 10（预渲染与发布链路）接入 `SITE_*` 环境变量时
+ * v1 只有一个站点，不引配置项；后续接入 `SITE_*` 环境变量时
  * 只需把这里换成从 `ApiEnv` 读取，投影函数与快照形状不受影响。
  */
 export const DEFAULT_SITE_META: SiteMeta = {

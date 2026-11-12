@@ -1,0 +1,70 @@
+# 静态站部署：从仓库里已提交的 content/ 快照全量预渲染，发布到 GitHub Pages。
+#
+# 与本地 `pnpm release` 的唯一差别是数据来源：
+# - 本地：本地 API 拉快照（需要数据库在跑）；
+# - CI：读 content/snapshot.json（由 `pnpm ship` 提交，构建期不需要 API / MySQL）。
+# 两者都跑同一份 vite-ssg 构建与静态内容模式，产物结构完全一致。
+#
+# 仓库设置一次即可：Settings → Pages → Build and deployment → Source = "GitHub Actions"。
+# 如果部署到项目站点（形如 /<repo>/），VITE_SITE_BASE 必须与仓库名一致。
+
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一时间只跑一个部署，新提交会取消进行中的旧构建
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      # 静态内容模式：取数走内联快照（content/snapshot.json），不需要任何 API。
+      VITE_STATIC_CONTENT: '1'
+      CONTENT_SNAPSHOT_FILE: content/snapshot.json
+      # 项目站点子路径；若仓库改名为 <user>.github.io（用户主站），把它改回 '/'。
+      VITE_SITE_BASE: /tiny-blogs/
+      # 站点对外地址（og:url / 规范链接用）。绑定自定义域名后同步更新这里。
+      VITE_SITE_URL: https://mmemore.github.io
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build shared contract package
+        run: pnpm --filter @tiny-blogs/shared build
+      - name: Prerender static site
+        run: pnpm --filter @tiny-blogs/web build:ssg
+      - name: Verify smoke assertions
+        # 产物结构断言（页面 / 正文 / meta / 快照就位）。密钥泄漏检查在 CI 上自动跳过：
+        # 本 workflow 不注入任何密钥，仓库里也没有可泄漏的 secret。
+        run: node scripts/smoke.mjs
+      - name: Upload pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

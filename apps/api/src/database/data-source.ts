@@ -6,7 +6,7 @@ import { readApiEnv, type ApiEnv } from '../config/env';
 /**
  * 由校验后的配置构造 TypeORM 连接选项。
  *
- * 纪律（ADR-0002，票 02 验收项）：
+ * 纪律（ADR-0002）：
  * - `synchronize` 永远是 `false`，schema 只经 migration 变更；
  * - `migrationsRun` 同样是 `false`，迁移必须显式执行（`pnpm migration:run`），
  *   避免应用启动时隐式改结构；
@@ -34,7 +34,7 @@ export function createDataSourceOptions(env: ApiEnv): DataSourceOptions {
     synchronize: false,
     migrationsRun: false,
     logging: ['error', 'warn'],
-    // 票 03 起由各业务模块提供实体；迁移与原生 SQL 不依赖实体元数据。
+    // 各业务模块提供实体；迁移与原生 SQL 不依赖实体元数据。
     entities: [],
     // 迁移用**显式导入**而不是 glob：glob 在直接跑 `src`（vitest / ts-node）时会把
     // `.ts` 迁移文件交给 `require()`，而 Node 20 没有内置 type stripping，会以

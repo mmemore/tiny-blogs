@@ -1,6 +1,6 @@
 # 字段与接口契约（v1）
 
-依据：`.scratch/blog-v1/spec.md`（PRD）、`.scratch/blog-v1/prototype/index.html`（12 屏原型）、`design/v6/index.html`（视觉方向 06 · 彩胶俱乐部）。
+依据：`design/v6/index.html`（视觉方向 06 · 彩胶俱乐部）与仓库内的领域词汇表（`GLOSSARY.md`）。
 
 本文是数据与接口的**唯一契约**。spec 负责"做什么"，本文负责"长什么样、怎么调"。术语以 `GLOSSARY.md` 为准；设计稿里的"曲目/彩胶/年鉴/员工通道"是展示文案，代码与字段一律用 `post` / `accent` / `archive` / `admin`。
 

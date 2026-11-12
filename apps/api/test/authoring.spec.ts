@@ -30,7 +30,7 @@ function draftPayload(overrides: DraftOverrides = {}): Record<string, unknown> {
 }
 
 /**
- * 票 04：文章写侧闭环，全部走 HTTP 边界。
+ * 文章写侧闭环，全部走 HTTP 边界。
  *
  * 两个账号 fixture：作者本人与"另一个用户"，用来证明归属校验真的生效
  * （v1 只有一个管理员，但漏洞往往在加第二个人的那天才暴露）。

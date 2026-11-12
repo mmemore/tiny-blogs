@@ -1,5 +1,5 @@
 async page => {
-  /* 票 08/09 真浏览器 E2E 主旅程（playwright-cli run-code 执行）；
+  /* 真浏览器 E2E 主旅程（playwright-cli run-code 执行）；
      截图统一落 qa-shots/admin-*；凭据只从环境变量读。 */
   const base = 'http://127.0.0.1:5173';
   // run-code 沙箱里没有 process；凭据由临时静态文件（dev server 的 public/）带进来，

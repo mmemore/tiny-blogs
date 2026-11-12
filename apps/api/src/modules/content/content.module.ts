@@ -5,7 +5,7 @@ import { ContentService } from './content.service';
 import { PublicContentController } from './public-content.controller';
 
 /**
- * 读侧模块（公开）。导出 `ContentService` 是为了让票 10 的构建导出（`/api/build/export`）
+ * 读侧模块（公开）。导出 `ContentService` 是为了让构建导出（`/api/build/export`）
  * 复用同一份快照与投影，而不是再写一套查询。
  */
 @Module({

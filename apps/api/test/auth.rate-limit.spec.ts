@@ -4,7 +4,7 @@ import { closeTestApp, createTestApp, type TestContext } from './helpers/app';
 import { createUser, resetDatabase } from './helpers/db';
 
 /**
- * 票 03：登录限流。
+ * 登录限流。
  *
  * 单独一个文件 + 单独一个应用实例，因为这个用例必须用**真实的** 5 次/分钟配置，
  * 而其它鉴权用例把限流调高了（否则同一 IP 的多次登录会互相污染）。

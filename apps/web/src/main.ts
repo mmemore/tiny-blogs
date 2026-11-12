@@ -1,5 +1,5 @@
 /**
- * 应用入口（vite-ssg 约定，票 10）。
+ * 应用入口（vite-ssg 约定）。
  *
  * 入口改为 vite-ssg 的 `ViteSSG()` 工厂：
  * - 浏览器端：模块加载时自动创建应用并挂载（vite-ssg 内部处理），
@@ -13,7 +13,7 @@
  * 2. `<head>` 由 vite-ssg 创建的 unhead 实例接管（`useHead: true` 是默认值），
  *   页面只声明 `usePageMeta()`，服务端写入 HTML、客户端水合复用同一份声明。
  *
- * 第三个点（票 10 实测踩到，值得写下来）：`useAsyncData` 的缓存表必须**按 app 装**，
+ * 第三个点（实测踩到的坑，值得写下来）：`useAsyncData` 的缓存表必须**按 app 装**，
  * 否则同进程里预渲染 20 个页面会共用一张表，`post:detail` 这种常量 key 让所有文章页
  * 渲染成同一篇。见 `installAsyncDataCache`。
  */
@@ -27,7 +27,9 @@ import './styles/index.css';
 
 export const createApp = ViteSSG(
   App,
-  { routes },
+  // base 必须与构建产物部署的子路径一致（`vite.config.ts` 的 `base` 同源），
+  // 否则项目站点（形如 `/<repo>/`）上的路由与资源都会 404。
+  { routes, base: import.meta.env.BASE_URL },
   ({ app, router }) => {
     app.use(createPinia());
     app.use(installAsyncDataCache);

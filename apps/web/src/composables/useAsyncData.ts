@@ -1,7 +1,7 @@
 /**
  * `useAsyncData`：把"读数据"收敛成一个可预渲染的原语。
  *
- * 预渲染兼容纪律（票 10 的前提）：
+ * 预渲染兼容纪律：
  * 1. 请求在 **setup 阶段**发起，不在 `onMounted` —— 预渲染不会挂载组件，挂在 `onMounted` 的请求
  *    在构建期永远不会跑，产出的 HTML 就是空壳。
  * 2. 同时注册 `onServerPrefetch(load)`：预渲染器会等这个 promise 落地再序列化 HTML，
@@ -49,7 +49,7 @@ const CACHE_KEY = Symbol('tiny-blogs:async-data-cache');
 /**
  * 安装**应用级**缓存表。
  *
- * 为什么必须按 app 隔离（票 10 实测踩到）：`vite-ssg` 在同一个 Node 进程里渲染所有页面，
+ * 为什么必须按 app 隔离（实测踩到的坑）：`vite-ssg` 在同一个 Node 进程里渲染所有页面，
  * 如果表是模块级的，`post:detail` 这种常量 key 会被第一页的数据填满，
  * 后面 19 个文章页全部渲染成同一篇——HTML 里 `<title>` 与正文都对不上。
  * 预渲染器**每个页面新建一个 app**，表随 app 走就天然隔离；

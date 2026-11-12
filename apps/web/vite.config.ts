@@ -2,7 +2,9 @@ import { fileURLToPath, URL } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import vue from '@vitejs/plugin-vue';
 import type { ViteSSGOptions } from 'vite-ssg';
-import { defineConfig, loadEnv } from 'vite';
+import { cpSync, existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { defineConfig, loadEnv, type Plugin, type ResolvedConfig } from 'vite';
 
 /**
  * vite-ssg 的选项挂在 vite 配置的顶层（`build()` 里 `config.ssgOptions` 读取）。
@@ -41,15 +43,95 @@ function resolveApiProxy(apiBase: string): { origin: string; path: string } {
   }
 }
 
+/** 快照虚拟模块 id。 */
+const SNAPSHOT_VIRTUAL_ID = 'virtual:content-snapshot';
+const SNAPSHOT_RESOLVED_ID = `\0${SNAPSHOT_VIRTUAL_ID}`;
+
+/**
+ * 静态内容模式插件（发布链路的 Pages 部署形态，ADR-0004）。
+ *
+ * `VITE_STATIC_CONTENT=1` 时启用。该模式解决的是"静态托管上没有 API"：
+ * - SSR（预渲染）构建：把 `CONTENT_SNAPSHOT_FILE` 指向的快照 JSON **内联**为虚拟模块，
+ *   页面取数直接走快照查询，构建期不需要任何 API 进程；
+ * - 客户端构建：虚拟模块导出 `null`，运行时按需 fetch 站点上的 `content/snapshot.json`
+ *   （由本插件在构建收尾时拷进产物），水合后的翻页/搜索/标签筛选据此本地求值；
+ * - 非静态模式（`pnpm dev` 与 API 模式构建）：虚拟模块导出 `null`，取数走 HTTP（见
+ *   `api/content.ts` 的分流），行为与 ADR-0005 的同源代理完全一致。
+ *
+ * 为什么要用虚拟模块而不是直接读文件：客户端 bundle 里绝不允许出现 `node:fs`
+ * 的任何字节——通过 `configResolved` 区分 SSR/客户端两次构建，为同一个虚拟 id
+ * 输出不同的内容，分支在编译期就确定，运行时没有"猜环境"的逻辑。
+ *
+ * @param staticMode 是否启用静态内容模式。
+ * @param snapshotFile 快照 JSON 路径（静态模式必需）。
+ * @returns vite 插件。
+ */
+function contentSnapshotPlugin(staticMode: boolean, snapshotFile: string | undefined): Plugin {
+  /** 当前构建是否是 SSR 侧（`configResolved` 每次构建都会回调一次）。 */
+  let isSsrBuild = false;
+  let resolved: ResolvedConfig | undefined;
+
+  return {
+    name: 'tiny-blogs:content-snapshot',
+    configResolved(config) {
+      resolved = config;
+      // 客户端/SPA 构建 `build.ssr` 为 false，SSR 构建为入口文件路径。
+      isSsrBuild = typeof config.build.ssr === 'string';
+    },
+    resolveId(id) {
+      if (id === SNAPSHOT_VIRTUAL_ID) {
+        return SNAPSHOT_RESOLVED_ID;
+      }
+      return undefined;
+    },
+    load(id) {
+      if (id !== SNAPSHOT_RESOLVED_ID) {
+        return undefined;
+      }
+      if (staticMode && isSsrBuild) {
+        const raw = snapshotFile === undefined ? undefined : readFileSync(resolve(snapshotFile), 'utf8');
+        const snapshot = JSON.parse(raw ?? '');
+        return `export default ${JSON.stringify(snapshot)};`;
+      }
+      return 'export default null;';
+    },
+    closeBundle() {
+      // 只在客户端构建收尾时拷贝部署所需的静态资源（SSR 产物会被丢弃）。
+      if (!staticMode || isSsrBuild || resolved === undefined || snapshotFile === undefined) {
+        return;
+      }
+      const outDir = resolve(resolved.root ?? '.', resolved.build.outDir);
+      if (existsSync(snapshotFile)) {
+        cpSync(resolve(snapshotFile), resolve(outDir, 'content', 'snapshot.json'));
+      }
+      // 与快照同源的已发布图片（内容哈希命名，重复拷贝幂等）。
+      const uploadsDir = resolve(repoRoot, 'content/uploads');
+      if (existsSync(uploadsDir)) {
+        cpSync(uploadsDir, resolve(outDir, 'uploads'), { recursive: true });
+      }
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, repoRoot, '');
   const apiBase = env.VITE_API_BASE ?? 'http://127.0.0.1:3000/api';
   const proxy = resolveApiProxy(apiBase);
+  const staticMode = env.VITE_STATIC_CONTENT === '1';
+  const snapshotFile =
+    staticMode && env.CONTENT_SNAPSHOT_FILE !== undefined && env.CONTENT_SNAPSHOT_FILE !== ''
+      ? resolve(repoRoot, env.CONTENT_SNAPSHOT_FILE)
+      : undefined;
 
   return {
     envDir: repoRoot,
     /**
-     * 预渲染选项（票 10）。只在 `vite-ssg build`（即 `pnpm release`）时生效；
+     * 静态托管子路径（GitHub Pages 项目站点形如 `/<repo>/`）。
+     * 根路径部署（`<user>.github.io` 仓库或自托管）保持默认 `/`，两者都不用改代码。
+     */
+    base: env.VITE_SITE_BASE ?? '/',
+    /**
+     * 预渲染选项。只在 `vite-ssg build`（即 `pnpm release`）时生效；
      * 普通 `pnpm build` 仍然是 SPA，`ssgOptions` 被完全忽略。
      */
     ssgOptions: {
@@ -59,7 +141,7 @@ export default defineConfig(({ mode }) => {
     },
     // Tailwind v4 走 Vite 插件而不是 PostCSS：`styles/tokens.css` 里的 `@import 'tailwindcss'`
     // 与 `@theme` 由它在构建期展开，令牌因此只有一份来源。
-    plugins: [vue(), tailwindcss()],
+    plugins: [vue(), tailwindcss(), contentSnapshotPlugin(staticMode, snapshotFile)],
     optimizeDeps: {
       // 共享包是 workspace 链接包，显式预打包才能稳定拿到其导出。
       include: ['@tiny-blogs/shared'],
@@ -111,7 +193,7 @@ export default defineConfig(({ mode }) => {
            * 切成独立的 chunk 之后：应用壳（`index-*.js`）回到百 KB 量级，
            * 渲染器只在真正调用 `renderMarkdown` 的页面（关于页）执行，且全站共用一份、可长期缓存。
            * 也就是说：**详情页依然不解析 Markdown**（它只 v-html 接口给的 `html`），
-           * 关于页才需要渲染器，这是票 07 明确要求的"本地 Markdown + 共享渲染器"。
+           * 关于页才需要渲染器，这是"本地 Markdown + 共享渲染器"的设计要求。
            *
            * 用函数而不是 `{ contract: [...], admin: [...] }` 对象形式的原因：
            * `vite-ssg` 的 **SSR 构建**把所有依赖标成 external，而对象形式会预先解析出

@@ -1,5 +1,5 @@
 /**
- * `toTrack` / `toPostSummary` / `toPostDetail` 的纯函数单测（票 05）。
+ * `toTrack` / `toPostSummary` / `toPostDetail` 的纯函数单测。
  *
  * 曲目号规则来自契约 §3，是"唱片编号不因新碟发行而位移"这条隐性需求的可执行版本，
  * 因此逐个序号钉住：A1…A4、B1、B5 之前不能出现任何偏差。
