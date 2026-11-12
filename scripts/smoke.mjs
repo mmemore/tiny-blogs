@@ -1,7 +1,8 @@
 /**
  * `pnpm smoke`：构建冒烟脚本。
  *
- * 无浏览器依赖，只检查 dist 产物 + `.release/snapshot.json` 的交叉一致性：
+ * 无浏览器依赖，只检查 dist 产物 + 内容快照的交叉一致性
+ * （快照来源：CI 用 `content/snapshot.json`，本地 release 用 `.release/snapshot.json`）：
  * 1. 关键页面存在：5 个静态页 + 每个快照 slug 的 `posts/<slug>/index.html`；
  * 2. 文章页 HTML **直接含正文**：快照第一篇的第一个 `## ` 小节文本；
  *    每篇文章页含 `<title>`、`og:title`、`og:description`（= summary）、
@@ -23,7 +24,11 @@ import { fileURLToPath } from 'node:url';
 const ROOT = resolve(fileURLToPath(import.meta.url), '..', '..');
 const WEB_DIR = resolve(ROOT, 'apps/web');
 const DIST = resolve(WEB_DIR, 'dist');
-const SNAPSHOT_PATH = resolve(ROOT, '.release', 'snapshot.json');
+// 快照来源跟随构建参数：CI（`CONTENT_SNAPSHOT_FILE=content/snapshot.json`）读仓库里
+// 提交的内容文件，本地 release 默认读 `.release/snapshot.json`——同一套断言两边通用。
+const SNAPSHOT_PATH = process.env.CONTENT_SNAPSHOT_FILE
+  ? resolve(ROOT, process.env.CONTENT_SNAPSHOT_FILE)
+  : resolve(ROOT, '.release', 'snapshot.json');
 
 const failures = [];
 /** 断言计数（通过的断言数，用于汇总输出）。 */
@@ -131,7 +136,7 @@ function walkFiles(dir, baseDir = dir) {
 // ---- 0. 前置条件 ----
 console.log('[smoke] 检查前置条件...');
 if (!existsSync(SNAPSHOT_PATH)) {
-  console.error('[smoke] FAIL: .release/snapshot.json 不存在——先跑 `pnpm release`。');
+  console.error(`[smoke] FAIL: 快照不存在（${SNAPSHOT_PATH}）——本地先跑 \`pnpm release\`；CI 检查 CONTENT_SNAPSHOT_FILE 是否指向已提交的 content/snapshot.json。`);
   process.exit(1);
 }
 if (!existsSync(DIST)) {
