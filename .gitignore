@@ -45,3 +45,9 @@ _tmp_*
 
 # One-off exploratory artifacts: prototype screens are throwaway, not the product
 .scratch/**/prototype/
+
+# Dev-process artifacts (issue tracker, agent workflow notes) stay local-only:
+# the public repo shows the source and the docs, not the day-to-day process.
+.scratch/
+docs/agents/
+AGENTS.md
