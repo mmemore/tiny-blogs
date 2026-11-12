@@ -1,5 +1,5 @@
-import { join } from 'node:path';
 import { DataSource, type DataSourceOptions } from 'typeorm';
+import { CreateBlogSchema1762760000000 } from './migrations/1762760000000-CreateBlogSchema';
 import { loadEnvFile } from '../config/dotenv';
 import { readApiEnv, type ApiEnv } from '../config/env';
 
@@ -36,7 +36,11 @@ export function createDataSourceOptions(env: ApiEnv): DataSourceOptions {
     logging: ['error', 'warn'],
     // 票 03 起由各业务模块提供实体；迁移与原生 SQL 不依赖实体元数据。
     entities: [],
-    migrations: [join(__dirname, 'migrations', '*.{ts,js}')],
+    // 迁移用**显式导入**而不是 glob：glob 在直接跑 `src`（vitest / ts-node）时会把
+    // `.ts` 迁移文件交给 `require()`，而 Node 20 没有内置 type stripping，会以
+    // `SyntaxError: Unexpected token '{'` 失败。显式导入走模块图，两个运行时都成立，
+    // 也与 `test/helpers/db.ts` 的写法保持一致。新增迁移时在这里补一行。
+    migrations: [CreateBlogSchema1762760000000],
     migrationsTableName: 'migrations',
   };
 }
