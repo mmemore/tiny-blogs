@@ -123,6 +123,21 @@ export default defineConfig(({ mode }) => {
       ? resolve(repoRoot, env.CONTENT_SNAPSHOT_FILE)
       : undefined;
 
+  /**
+   * 静态内容模式下，预渲染路由清单直接来自快照文件。
+   *
+   * 快照本来就是路由的唯一数据源（见 `prerender-routes.ts` 的纪律），这里在配置期
+   * 把 slug 展开成 `PRERENDER_*` 环境变量，CI（workflow 只设 `CONTENT_SNAPSHOT_FILE`）
+   * 与本地 `release.mjs` 走同一条路径——`??=` 保证 release.mjs 显式传入的清单优先。
+   */
+  if (snapshotFile !== undefined && existsSync(snapshotFile)) {
+    const snapshot: { posts?: Array<{ slug: string }>; tags?: Array<{ slug: string }> } = JSON.parse(
+      readFileSync(snapshotFile, 'utf8'),
+    );
+    process.env.PRERENDER_POST_SLUGS ??= (snapshot.posts ?? []).map((post) => post.slug).join(',');
+    process.env.PRERENDER_TAG_SLUGS ??= (snapshot.tags ?? []).map((tag) => tag.slug).join(',');
+  }
+
   return {
     envDir: repoRoot,
     /**

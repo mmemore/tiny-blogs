@@ -1,9 +1,10 @@
 /**
  * 预渲染路由清单。
  *
- * 纪律：**路由只来自快照**。`pnpm release` 先拉 `ContentSnapshot`，把已发布 slug 与
- * 标签 slug 写进进程环境变量（`PRERENDER_POST_SLUGS` / `PRERENDER_TAG_SLUGS`），
- * 这里的 `includedRoutes` 只在 SSR 构建里被 vite-ssg 调用，按清单展开成具体路径。
+ * 纪律：**路由只来自快照**。静态内容模式下 vite 配置在构建期从快照文件（`CONTENT_SNAPSHOT_FILE`）
+ * 展开 slug 清单（`PRERENDER_POST_SLUGS` / `PRERENDER_TAG_SLUGS`），本地 `pnpm release`
+ * 则从 API 拉到的快照显式传入——两条路数据同源，这里的 `includedRoutes` 只在
+ * SSR 构建里被 vite-ssg 调用，按清单展开成具体路径。
  *
  * 两条硬规则在这里结构性生效，而不是靠"记得别写进去"：
  * 1. `/admin` 前缀（登录、列表、编辑器、标签管理）**永不**参与预渲染 —— 它们是登录态页面，
