@@ -51,3 +51,6 @@ _tmp_*
 .scratch/
 docs/agents/
 AGENTS.md
+
+# vite-ssg 的构建临时目录
+.vite-ssg-temp/
