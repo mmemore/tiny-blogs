@@ -8,9 +8,14 @@
 /*
  * 设计稿里每一屏是一个 `.screen` 画板；落地成页面后它只承担一件事：
  * 建立独立的块级格式化上下文，让页脚与大字水印的负外边距不会溢到 `<main>` 外面。
+ *
+ * `overflow-x: clip`：唱片 SVG 是个方形元素，旋转动画会让方形的角转到布局框外
+ * （圆本身不会超界，角是透明的但仍产生滚动区域），在视口右缘表现为横向滚动条。
+ * 在页面根上横向裁剪掉；用 `clip` 而不是 `hidden`，避免把页面变成滚动容器。
  */
 .screen {
   display: flow-root;
+  overflow-x: clip;
 }
 
 /* ---------- 站头 ---------- */
@@ -164,6 +169,12 @@
 }
 
 /* ---------- 大字水印 ---------- */
+/*
+ * `line-height: 0.82` 是刻意的紧凑排版，但行盒比字形矮：下延字母（g/y/p）会
+ * 伸出盒底被 `overflow: hidden` 裁掉，在截图里表现为"字母被页脚横线盖住"。
+ * `padding-bottom` 把盒底往下撑出下延需要的空间，同时去掉负 margin，
+ * 让字形完整地"坐"在页脚边框线上方。
+ */
 .bigmark {
   font-family: var(--font-display);
   font-weight: 900;
@@ -171,11 +182,11 @@
   line-height: 0.82;
   letter-spacing: -0.03em;
   white-space: nowrap;
-  padding: 38px 56px 0;
+  padding: 38px 56px 0.16em;
   color: transparent;
   -webkit-text-stroke: 2px var(--color-ink);
   user-select: none;
-  margin-bottom: -0.06em;
+  margin-bottom: 0;
   overflow: hidden;
 }
 
@@ -485,7 +496,7 @@
   }
 
   .bigmark {
-    padding: 30px 24px 0;
+    padding: 30px 24px 0.16em;
   }
 
   .state,
