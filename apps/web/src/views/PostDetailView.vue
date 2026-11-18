@@ -14,6 +14,7 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import type { PostDetail } from '@tiny-blogs/shared';
 import { ApiRequestError } from '../api/client';
+import BigMark from '../components/BigMark.vue';
 import GiscusComments from '../components/GiscusComments.vue';
 import NotFoundPanel from '../components/NotFoundPanel.vue';
 import StateBlock from '../components/StateBlock.vue';
@@ -246,7 +247,7 @@ watch(
       <!-- 配置齐全才渲染；v1 默认四项皆空，整块不存在 -->
       <GiscusComments />
 
-      <div class="bigmark" aria-hidden="true">side {{ post.track.side }}</div>
+      <BigMark :text="`side ${post.track.side}`" />
     </template>
   </div>
 </template>

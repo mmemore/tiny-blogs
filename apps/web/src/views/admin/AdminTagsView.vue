@@ -291,6 +291,11 @@ onMounted(load);
   width: 140px;
 }
 
+/* 同 AdminPostsView：表头右对齐的规则特异度必须高过 `.n-table th`，否则表头与按钮错位。 */
+.n-table th.c-act {
+  text-align: right;
+}
+
 .name {
   color: var(--color-ink);
   font-weight: 500;

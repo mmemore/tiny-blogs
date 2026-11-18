@@ -10,6 +10,7 @@
  * 硬造一个日期就等于前端自己算派生值（违反 §3 的单一来源原则）。
  */
 import { computed } from 'vue';
+import BigMark from '../components/BigMark.vue';
 import StateBlock from '../components/StateBlock.vue';
 import { useAsyncData } from '../composables/useAsyncData';
 import { pageTitle, usePageMeta } from '../composables/usePageMeta';
@@ -103,6 +104,6 @@ usePageMeta(() => ({
       </div>
     </div>
 
-    <div class="bigmark" aria-hidden="true">catalog</div>
+    <BigMark text="catalog" />
   </div>
 </template>

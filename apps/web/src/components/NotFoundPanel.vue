@@ -6,6 +6,7 @@
  * 1. 兜底路由（`/:pathMatch(.*)*`）；
  * 2. 文章详情报 404（未知 slug / 已取消发布的文章）—— 接口 404 必须变成页面 404，不能白屏。
  */
+import BigMark from './BigMark.vue';
 import GhostSleeve from './GhostSleeve.vue';
 
 withDefaults(
@@ -34,5 +35,5 @@ withDefaults(
     <GhostSleeve />
   </section>
 
-  <div class="bigmark" aria-hidden="true">out of press</div>
+  <BigMark text="out of press" />
 </template>

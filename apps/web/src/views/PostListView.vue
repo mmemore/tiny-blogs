@@ -9,6 +9,7 @@
 import { computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { DEFAULT_PAGE_SIZE } from '@tiny-blogs/shared';
+import BigMark from '../components/BigMark.vue';
 import PagerNav from '../components/PagerNav.vue';
 import SearchField from '../components/SearchField.vue';
 import StateBlock from '../components/StateBlock.vue';
@@ -138,5 +139,7 @@ function onSearch(value: string): void {
       <TrackTable :items="items" />
       <PagerNav :page="currentPage" :page-size="PAGE_SIZE" :total="total" />
     </template>
+
+    <BigMark text="tracks" />
   </div>
 </template>

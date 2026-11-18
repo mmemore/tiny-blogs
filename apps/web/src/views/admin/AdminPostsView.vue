@@ -489,6 +489,15 @@ onMounted(async () => {
   text-align: right;
 }
 
+/*
+ * 表头必须跟着右对齐：`.n-table th { text-align: left }` 的特异度（0,2,1）
+ * 高于 `.c-act`（0,2,0），不显式提权的话表头「操作」会左对齐、
+ * 下面的按钮却右对齐，看起来整列错位。
+ */
+.n-table th.c-act {
+  text-align: right;
+}
+
 .tt {
   color: var(--color-ink);
   font-weight: 500;

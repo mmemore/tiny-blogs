@@ -6,6 +6,7 @@
  * 所以构建出来的 HTML 里已经有真实内容，不是空壳。
  */
 import { computed } from 'vue';
+import BigMark from '../components/BigMark.vue';
 import PostSleeve from '../components/PostSleeve.vue';
 import StateBlock from '../components/StateBlock.vue';
 import TrackSkeleton from '../components/TrackSkeleton.vue';
@@ -115,6 +116,6 @@ usePageMeta(() => ({
       <RouterLink class="tk-link" to="/posts">{{ shelfNote }}</RouterLink>
     </div>
 
-    <div class="bigmark" aria-hidden="true">{{ SITE.wordmark }}</div>
+    <BigMark :text="SITE.wordmark" />
   </div>
 </template>

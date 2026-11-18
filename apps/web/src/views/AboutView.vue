@@ -7,6 +7,7 @@
  * 设计稿里的"林一 / 前端工程师 / 在职看机会"是虚构占位，这里没有照抄。
  */
 import { computed } from 'vue';
+import BigMark from '../components/BigMark.vue';
 import RecordCrate from '../components/RecordCrate.vue';
 import { ABOUT_HTML } from '../content/about';
 import { useAsyncData } from '../composables/useAsyncData';
@@ -81,6 +82,6 @@ usePageMeta(() => ({
       </figure>
     </div>
 
-    <div class="bigmark" aria-hidden="true">liner notes</div>
+    <BigMark text="liner notes" />
   </div>
 </template>

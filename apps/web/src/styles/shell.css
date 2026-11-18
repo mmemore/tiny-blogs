@@ -170,24 +170,51 @@
 
 /* ---------- 大字水印 ---------- */
 /*
- * `line-height: 0.82` 是刻意的紧凑排版，但行盒比字形矮：下延字母（g/y/p）会
- * 伸出盒底被 `overflow: hidden` 裁掉，在截图里表现为"字母被页脚横线盖住"。
- * `padding-bottom` 把盒底往下撑出下延需要的空间，同时去掉负 margin，
- * 让字形完整地"坐"在页脚边框线上方。
+ * 分界线**不由边框绘制**，而是由组件量出每个字的底边后画一条 path
+ * （见 `components/BigMark.vue`）：线贴着字母底部走，遇到 g/y/p/q/j 向下凹。
+ * 等距边框做不到这件事——"side A"（无下延）会空出一大截，"tiny—blogs"（有 g）
+ * 又必须整体下移。
+ *
+ * 因此这里不能 `overflow: hidden`（会裁掉凹下去的那段曲线），
+ * 顶端由 `padding-top` 给出字形的上沿空间。
  */
 .bigmark {
+  position: relative;
   font-family: var(--font-display);
   font-weight: 900;
   font-size: clamp(56px, 12.5vw, 164px);
   line-height: 0.82;
   letter-spacing: -0.03em;
   white-space: nowrap;
-  padding: 38px 56px 0.16em;
+  padding: 38px 56px 0;
   color: transparent;
   -webkit-text-stroke: 2px var(--color-ink);
   user-select: none;
   margin-bottom: 0;
-  overflow: hidden;
+}
+
+/* 逐字量测用：inline-block 保住每个字的独立盒，`pre` 保住空格宽度 */
+.bigmark .bm-ch {
+  display: inline-block;
+  white-space: pre;
+}
+
+.bigmark .bm-rule {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  color: var(--color-ink);
+}
+
+/*
+ * 有大字水印的页面，站脚不再画上边框（分界线已经由水印的 path 提供）；
+ * 后台等没有水印的页面保持原来的直边框。
+ */
+body:has(.bigmark) .s-foot {
+  border-top: 0;
 }
 
 @supports not (-webkit-text-stroke: 1px black) {
@@ -496,7 +523,7 @@
   }
 
   .bigmark {
-    padding: 30px 24px 0.16em;
+    padding: 30px 24px 0;
   }
 
   .state,

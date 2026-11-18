@@ -6,6 +6,7 @@
  * 点击进入 `/tags/:slug`，那里复用列表页的曲目表。
  */
 import { computed } from 'vue';
+import BigMark from '../components/BigMark.vue';
 import StateBlock from '../components/StateBlock.vue';
 import { useAsyncData } from '../composables/useAsyncData';
 import { pageTitle, usePageMeta } from '../composables/usePageMeta';
@@ -60,6 +61,6 @@ usePageMeta(() => ({
       <RouterLink class="tk-link" to="/posts">看全部曲目</RouterLink>
     </div>
 
-    <div class="bigmark" aria-hidden="true">genres</div>
+    <BigMark text="genres" />
   </div>
 </template>
