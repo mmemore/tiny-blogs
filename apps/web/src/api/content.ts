@@ -67,14 +67,7 @@ export function listPosts(params: ListPostsParams = {}): Promise<Page<PostSummar
     return snapshotListPosts(toListQuery(params));
   }
   const query = toListQuery(params);
-  return apiGet<Page<PostSummary>>('/posts', {
-    page: query.page,
-    pageSize: query.pageSize,
-    tag: query.tag,
-    q: query.q,
-    year: query.year,
-    month: query.month,
-  });
+  return apiGet<Page<PostSummary>>('/posts', { ...query });
 }
 
 /**

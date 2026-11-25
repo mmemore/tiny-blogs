@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, type Repository, type SelectQueryBuilder } from 'typeorm';
 import {
   DEFAULT_SITE_META,
-  MAX_PAGE_SIZE,
+  clampPaging,
   POST_STATUS,
   toPostDetail,
   toPostRef,
@@ -54,8 +54,7 @@ export class ContentService implements ContentQuery {
    * @returns 分页结果。
    */
   async listPublished(query: ListQuery): Promise<Page<PostSummary>> {
-    const page = Math.max(1, Math.trunc(query.page));
-    const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, Math.trunc(query.pageSize)));
+    const { page, pageSize } = clampPaging(query.page, query.pageSize);
 
     const builder = this.publishedPosts();
 

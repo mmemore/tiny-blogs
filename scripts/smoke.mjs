@@ -18,10 +18,8 @@
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { ROOT, readEnvValue } from './lib/env.mjs';
 
-/** 项目根目录（`fileURLToPath` 跨平台正确处理 Windows 盘符）。 */
-const ROOT = resolve(fileURLToPath(import.meta.url), '..', '..');
 const WEB_DIR = resolve(ROOT, 'apps/web');
 const DIST = resolve(WEB_DIR, 'dist');
 // 快照来源跟随构建参数：CI（`CONTENT_SNAPSHOT_FILE=content/snapshot.json`）读仓库里
@@ -50,25 +48,6 @@ function assert(condition, message) {
     ok(message);
   } else {
     bad(message);
-  }
-}
-
-/**
- * 读根目录 `.env` 的一个键（`process.env` 优先）。不把值打印到任何地方。
- */
-function readEnvValue(key) {
-  if (process.env[key] !== undefined && process.env[key] !== '') {
-    return process.env[key];
-  }
-  try {
-    const lines = readFileSync(resolve(ROOT, '.env'), 'utf8').split(/\r?\n/);
-    const line = lines.find((l) => l.startsWith(`${key}=`));
-    if (line === undefined) {
-      return '';
-    }
-    return line.slice(key.length + 1).trim().replace(/^"|"$/g, '');
-  } catch {
-    return '';
   }
 }
 

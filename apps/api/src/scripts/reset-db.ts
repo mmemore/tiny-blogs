@@ -8,9 +8,7 @@
  * 之后重跑迁移 + 种子即可得到与首次部署完全一致的 schema。
  */
 import { createAppDataSource } from '../database/data-source';
-
-/** 需要清理的表，按外键依赖的逆序排列（同时关闭外键检查，顺序仅作可读性冗余）。 */
-const TABLES = ['post_tags', 'posts', 'tags', 'refresh_tokens', 'users', 'migrations'] as const;
+import { ALL_TABLES } from '../database/tables';
 
 /**
  * 脚本入口。
@@ -21,11 +19,11 @@ async function main(): Promise<void> {
 
   try {
     await dataSource.query('SET FOREIGN_KEY_CHECKS = 0');
-    for (const table of TABLES) {
+    for (const table of ALL_TABLES) {
       await dataSource.query(`DROP TABLE IF EXISTS \`${table}\``);
     }
     await dataSource.query('SET FOREIGN_KEY_CHECKS = 1');
-    process.stdout.write(`已清空数据表：${TABLES.join(', ')}\n`);
+    process.stdout.write(`已清空数据表：${ALL_TABLES.join(', ')}\n`);
   } finally {
     await dataSource.destroy();
   }

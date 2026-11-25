@@ -32,7 +32,7 @@ import {
   publishAdminPost,
   unpublishAdminPost,
 } from '../../api/admin';
-import { ApiRequestError } from '../../api/client';
+import { describeError } from '../../lib/errors';
 import { formatDate, formatTime, joinTagNames } from '../../lib/format';
 import { useContentStore } from '../../stores/content';
 
@@ -130,7 +130,7 @@ async function load(): Promise<void> {
       page: query.page,
     });
   } catch (error) {
-    message.error(describe(error, '列表加载失败'));
+    message.error(describeError(error, '列表加载失败'));
   } finally {
     loading.value = false;
   }
@@ -155,17 +155,6 @@ async function loadTotals(): Promise<void> {
   } catch {
     // 计数只是辅助信息，失败不该挡住列表。
   }
-}
-
-/**
- * 把异常翻译成一句人话。
- *
- * @param error 捕获到的异常。
- * @param fallback 兜底文案。
- * @returns 展示用文案。
- */
-function describe(error: unknown, fallback: string): string {
-  return error instanceof ApiRequestError ? error.message : fallback;
 }
 
 /** 切页签：回到第一页再拉。 */
@@ -221,7 +210,7 @@ async function togglePublish(row: Row): Promise<void> {
     }
     await afterWrite();
   } catch (error) {
-    message.error(describe(error, '操作失败'));
+    message.error(describeError(error, '操作失败'));
   } finally {
     busySlug.value = null;
   }
@@ -245,7 +234,7 @@ function confirmDelete(row: Row): void {
         message.success('已删除');
         await afterWrite();
       } catch (error) {
-        message.error(describe(error, '删除失败'));
+        message.error(describeError(error, '删除失败'));
       } finally {
         busySlug.value = null;
       }
@@ -275,7 +264,7 @@ onMounted(async () => {
 
 <template>
   <div class="adm-posts">
-    <div class="bar">
+    <div class="adm-bar">
       <NInput
         v-model:value="query.q"
         placeholder="搜索标题或 slug"
@@ -285,11 +274,11 @@ onMounted(async () => {
         @clear="search"
       />
       <NButton @click="search">搜索</NButton>
-      <span class="sp" />
+      <span class="adm-sp" />
       <NButton type="primary" @click="create">＋ 新建文章</NButton>
     </div>
 
-    <div class="n-tabs" role="tablist">
+    <div class="adm-tabs" role="tablist">
       <button
         v-for="tab in TABS"
         :key="tab.key"
@@ -305,8 +294,8 @@ onMounted(async () => {
     </div>
 
     <NSpin :show="loading">
-      <div class="n-card">
-        <table class="n-table">
+      <div class="adm-card">
+        <table class="adm-table">
           <thead>
             <tr>
               <th class="c-title">标题</th>
@@ -314,7 +303,7 @@ onMounted(async () => {
               <th class="c-status">状态</th>
               <th class="c-tags">标签</th>
               <th class="c-time">更新时间</th>
-              <th class="c-act">操作</th>
+              <th class="adm-col-act">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -330,7 +319,7 @@ onMounted(async () => {
               </td>
               <td class="tags">{{ joinTagNames(row.item.tags) || '—' }}</td>
               <td class="dtm">{{ row.updatedLabel }}</td>
-              <td class="act">
+              <td class="adm-act">
                 <button type="button" :disabled="busySlug === row.item.slug" @click="edit(row.item.slug)">
                   编辑
                 </button>
@@ -360,7 +349,7 @@ onMounted(async () => {
               </td>
             </tr>
             <tr v-if="rows.length === 0 && !loading">
-              <td colspan="6" class="empty">
+              <td colspan="6" class="adm-empty">
                 {{ query.q.trim() === '' ? '还没有文章，点右上角新建一篇。' : '没有匹配的文章。' }}
               </td>
             </tr>
@@ -369,14 +358,14 @@ onMounted(async () => {
       </div>
     </NSpin>
 
-    <div class="n-page">
+    <div class="adm-page">
       <NPagination
         :page="query.page"
         :page-count="pageCount"
         :page-slot="7"
         @update:page="changePage"
       />
-      <span class="sp">共 {{ page?.total ?? 0 }} 条</span>
+      <span class="adm-sp">共 {{ page?.total ?? 0 }} 条</span>
     </div>
 
     <p class="adm-note">发布后需要重建一次才对外可见，约一分钟。构建失败时线上保留上一版。</p>
@@ -384,93 +373,14 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
 .search {
   width: 230px;
   --n-height: 34px;
 }
 
-.bar .sp,
-.n-page .sp {
-  margin-left: auto;
-}
-
-.n-tabs {
-  display: flex;
-  gap: 24px;
-  margin-top: 20px;
-  border-bottom: 1px solid var(--color-line);
-  font-size: 13px;
-}
-
-.n-tabs button {
-  padding: 0 0 10px;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  background: none;
-  color: var(--color-faint);
-  font-size: 13px;
-  cursor: pointer;
-  transition: color 0.15s;
-}
-
-.n-tabs button:hover {
-  color: var(--color-dim);
-}
-
-.n-tabs button.on {
-  color: var(--color-ink);
-  border-bottom-color: var(--color-accent);
-}
-
-.n-card {
-  margin-top: 16px;
-  background: var(--color-paper);
-  border: 1px solid var(--color-line);
-  border-radius: 6px;
-  overflow-x: auto;
-}
-
-.n-table {
-  width: 100%;
+/* 公共表格件在 styles/admin.css；这里只声明本页列宽与独有元素。 */
+.adm-table {
   min-width: 720px;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.n-table th {
-  padding: 11px 16px;
-  border-bottom: 1px solid var(--color-line);
-  background: var(--color-bg);
-  color: var(--color-faint);
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  font-weight: 400;
-  letter-spacing: 0.14em;
-  text-align: left;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.n-table td {
-  padding: 13px 16px;
-  border-bottom: 1px solid var(--color-line);
-  color: var(--color-body);
-  vertical-align: middle;
-}
-
-.n-table tbody tr:last-child td {
-  border-bottom: 0;
-}
-
-.n-table tbody tr:hover td {
-  background: var(--color-bg);
 }
 
 .c-title {
@@ -483,19 +393,6 @@ onMounted(async () => {
 
 .c-time {
   width: 132px;
-}
-
-.c-act {
-  text-align: right;
-}
-
-/*
- * 表头必须跟着右对齐：`.n-table th { text-align: left }` 的特异度（0,2,1）
- * 高于 `.c-act`（0,2,0），不显式提权的话表头「操作」会左对齐、
- * 下面的按钮却右对齐，看起来整列错位。
- */
-.n-table th.c-act {
-  text-align: right;
 }
 
 .tt {
@@ -554,56 +451,5 @@ onMounted(async () => {
   font-weight: 700;
   letter-spacing: 0.12em;
   transform: rotate(-3deg);
-}
-
-.act {
-  text-align: right;
-  white-space: nowrap;
-}
-
-.act button {
-  margin-left: 12px;
-  border: 0;
-  background: none;
-  color: var(--color-dim);
-  font-size: 12.5px;
-  cursor: pointer;
-}
-
-.act button:hover {
-  color: var(--color-accent-dark);
-}
-
-.act button.del:hover {
-  color: var(--color-accent-dark);
-  text-decoration: underline;
-}
-
-.act button:disabled {
-  color: var(--color-faint);
-  cursor: not-allowed;
-}
-
-.empty {
-  padding: 34px 16px;
-  color: var(--color-faint);
-  font-size: 12.5px;
-  text-align: center;
-}
-
-.n-page {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 16px;
-  color: var(--color-faint);
-  font-family: var(--font-mono);
-  font-size: 11px;
-}
-
-.adm-note {
-  margin-top: 12px;
-  color: var(--color-faint);
-  font-size: 11.5px;
 }
 </style>

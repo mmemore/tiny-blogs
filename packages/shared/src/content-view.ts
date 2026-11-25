@@ -108,6 +108,26 @@ export const DEFAULT_PAGE_SIZE = 8;
 export const MAX_PAGE_SIZE = 24;
 
 /**
+ * 按契约钳制分页参数。
+ *
+ * HTTP 实现（`ContentService`）与静态快照实现（`snapshot-queries`）必须给出
+ * 同一组 `page` / `pageSize`，否则同一个链接在两种模式下的分页结果会不一致。
+ *
+ * @param page 请求的页码。
+ * @param pageSize 请求的每页条数。
+ * @returns 页码 ≥ 1、条数落在 1–`MAX_PAGE_SIZE`，均已取整。
+ */
+export function clampPaging(
+  page: number,
+  pageSize: number,
+): { readonly page: number; readonly pageSize: number } {
+  return {
+    page: Math.max(1, Math.trunc(page)),
+    pageSize: Math.min(MAX_PAGE_SIZE, Math.max(1, Math.trunc(pageSize))),
+  };
+}
+
+/**
  * 后台列表默认每页条数。
  *
  * 与公开列表的 8 不同：读者是"一页看完一段"，编辑是"扫一遍找那篇"，

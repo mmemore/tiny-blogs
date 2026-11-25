@@ -10,7 +10,7 @@
  *   结果集几乎一致；这是静态模式的明确取舍，不是等价实现。
  */
 import {
-  MAX_PAGE_SIZE,
+  clampPaging,
   type ArchiveYear,
   type ListQuery,
   type Page,
@@ -40,20 +40,6 @@ function toSummary(post: SnapshotPost): PostSummary {
     readingMinutes: post.readingMinutes,
     track: post.track,
     tags: post.tags,
-  };
-}
-
-/**
- * 按契约语义截断/钳制分页参数（与 `ContentService.listPublished` 一致）。
- *
- * @param page 页码。
- * @param pageSize 每页条数。
- * @returns 钳制后的值。
- */
-function clampPaging(page: number, pageSize: number): { page: number; pageSize: number } {
-  return {
-    page: Math.max(1, Math.trunc(page)),
-    pageSize: Math.min(MAX_PAGE_SIZE, Math.max(1, Math.trunc(pageSize))),
   };
 }
 

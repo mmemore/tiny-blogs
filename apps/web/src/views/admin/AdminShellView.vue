@@ -15,6 +15,8 @@ import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { adminThemeOverrides } from '../../admin/theme';
 import { useSessionStore } from '../../stores/auth';
+// 后台通用件（工具栏 / 表格 / 空态）：只随 `/admin` 子树加载，不进前台主包。
+import '../../styles/admin.css';
 
 const route = useRoute();
 const router = useRouter();
@@ -106,7 +108,7 @@ async function logout(): Promise<void> {
 .adm {
   display: grid;
   grid-template-columns: 216px 1fr;
-  min-height: calc(100vh - 78px);
+  min-height: calc(100vh - var(--header-height));
   font-size: 14px;
   background: var(--color-bg);
 }

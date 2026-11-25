@@ -8,10 +8,8 @@ import { DataSource } from 'typeorm';
 import { hashPassword } from '../../src/common/password';
 import type { ApiEnv } from '../../src/config/env';
 import { createDataSourceOptions } from '../../src/database/data-source';
+import { APP_TABLES } from '../../src/database/tables';
 import { CreateBlogSchema1762760000000 } from '../../src/database/migrations/1762760000000-CreateBlogSchema';
-
-/** 清库时按外键依赖的逆序处理（同时关闭外键检查）。 */
-const TABLES = ['post_tags', 'posts', 'tags', 'refresh_tokens', 'users'] as const;
 
 /** 测试账号 fixture。 */
 export interface SeededUser {
@@ -58,7 +56,7 @@ export async function migrateTestDatabase(env: ApiEnv): Promise<void> {
 export async function resetDatabase(dataSource: DataSource): Promise<void> {
   await dataSource.query('SET FOREIGN_KEY_CHECKS = 0');
   try {
-    for (const table of TABLES) {
+    for (const table of APP_TABLES) {
       await dataSource.query(`TRUNCATE TABLE \`${table}\``);
     }
   } finally {

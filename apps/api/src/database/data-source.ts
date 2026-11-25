@@ -2,6 +2,7 @@ import { DataSource, type DataSourceOptions } from 'typeorm';
 import { CreateBlogSchema1762760000000 } from './migrations/1762760000000-CreateBlogSchema';
 import { loadEnvFile } from '../config/dotenv';
 import { readApiEnv, type ApiEnv } from '../config/env';
+import { MIGRATIONS_TABLE } from './tables';
 
 /**
  * 由校验后的配置构造 TypeORM 连接选项。
@@ -41,7 +42,7 @@ export function createDataSourceOptions(env: ApiEnv): DataSourceOptions {
     // `SyntaxError: Unexpected token '{'` 失败。显式导入走模块图，两个运行时都成立，
     // 也与 `test/helpers/db.ts` 的写法保持一致。新增迁移时在这里补一行。
     migrations: [CreateBlogSchema1762760000000],
-    migrationsTableName: 'migrations',
+    migrationsTableName: MIGRATIONS_TABLE,
   };
 }
 

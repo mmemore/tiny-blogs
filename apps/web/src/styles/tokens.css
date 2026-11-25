@@ -46,3 +46,16 @@
   --shadow-ink: 6px 6px 0 var(--color-ink);
   --shadow-ink-sm: 3px 3px 0 var(--color-ink);
 }
+
+/*
+ * 布局常量（全站唯一一处定义）。
+ *
+ * - `--header-height`：前台站头（`shell.css` 的 `.top`）的实际高度，后台页面
+ *   `min-height: calc(100vh - ...)` 要用它；改动站头内边距时同步这一处。
+ * - `--anchor-offset`：锚点滚动时额外留出的呼吸空间，`prose.css` 的
+ *   `scroll-margin-top` / `.toc { top }` 与 `router.ts` 的锚点滚动共用一个值。
+ */
+:root {
+  --header-height: 78px;
+  --anchor-offset: 96px;
+}

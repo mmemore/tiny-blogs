@@ -17,6 +17,7 @@ import { existsSync, mkdirSync, cpSync, renameSync, writeFileSync } from 'node:f
 import { spawnSync } from 'node:child_process';
 import { basename, resolve } from 'node:path';
 import { ROOT, readEnvValue } from './lib/env.mjs';
+import { fetchSnapshot } from './lib/snapshot.mjs';
 
 const WEB_DIR = resolve(ROOT, 'apps/web');
 const DIST = resolve(WEB_DIR, 'dist');
@@ -73,31 +74,8 @@ function childEnv(extra) {
   return { ...base, ...extra };
 }
 
-// ---- 1. 令牌 ----
-const token = readEnvValue('BUILD_EXPORT_TOKEN');
-if (token === '') {
-  fail('BUILD_EXPORT_TOKEN 未设置（检查 .env 或当前进程环境）');
-}
-
-// ---- 2. 拉快照 ----
-const exportUrl = readEnvValue('BUILD_EXPORT_URL') || 'http://127.0.0.1:3000/api/build/export';
-log(`拉取快照：${exportUrl}`);
-const startedAt = Date.now();
-let snapshot;
-try {
-  const response = await fetch(exportUrl, { headers: { 'X-Build-Token': token } });
-  if (!response.ok) {
-    fail(`导出接口返回 HTTP ${String(response.status)}（检查 API 是否在跑、令牌是否一致）`);
-  }
-  snapshot = await response.json();
-} catch (error) {
-  fail(`无法访问导出接口：${error instanceof Error ? error.message : String(error)}`);
-}
-if (snapshot?.version !== 1 || !Array.isArray(snapshot?.posts)) {
-  fail('快照形状不合法（version !== 1 或 posts 不是数组）');
-}
-const fetchMs = Date.now() - startedAt;
-log(`快照就绪：${String(snapshot.posts.length)} 篇已发布 / ${String(snapshot.tags.length)} 个标签，耗时 ${String(fetchMs)}ms`);
+// ---- 1–2. 令牌 + 拉快照（校验形状，失败即退出）----
+const snapshot = await fetchSnapshot({ log, fail });
 
 // ---- 3. 落盘 + 路由清单 ----
 mkdirSync(RELEASE_DIR, { recursive: true });

@@ -14,6 +14,7 @@ import {
   type TagRef,
 } from '@tiny-blogs/shared';
 import { ApiError } from '../../common/errors/api-error';
+import { isDuplicateEntry } from '../../common/db-errors';
 import { loadTagRefs, toIsoOrNull, toPostRecord } from '../content/post-mapping';
 import { PostEntity } from '../content/entities/post.entity';
 import { TagEntity } from '../content/entities/tag.entity';
@@ -517,19 +518,4 @@ export class AuthoringService {
  */
 function toSeconds(value: Date): number {
   return Math.floor(value.getTime() / 1000);
-}
-
-/**
- * 判断是否为 MySQL 唯一键冲突（`ER_DUP_ENTRY`）。
- *
- * @param error 捕获到的异常。
- * @returns 命中重复键返回 true。
- */
-function isDuplicateEntry(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    (error as { code?: unknown }).code === 'ER_DUP_ENTRY'
-  );
 }

@@ -33,8 +33,11 @@ import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
 import {
   POST_SLUG_PATTERN,
   POST_STATUS,
+  UPLOAD_MIME_TYPES,
   renderMarkdown,
+  type AdminPostDetail,
   type PostInput,
+  type PostRecord,
   type PostStatus,
   type TagRef,
 } from '@tiny-blogs/shared';
@@ -48,12 +51,16 @@ import {
   uploadImage,
 } from '../../api/admin';
 import { ApiRequestError } from '../../api/client';
+import { describeError } from '../../lib/errors';
 import { formatTime } from '../../lib/format';
 import { sanitizeSlug, slugify } from '../../lib/slug';
 import { useContentStore } from '../../stores/content';
 
 /** 自动保存间隔（毫秒）。 */
 const AUTOSAVE_MS = 30_000;
+
+/** 文件选择框的可选类型：与上传白名单同源。 */
+const UPLOAD_ACCEPT = UPLOAD_MIME_TYPES.join(',');
 
 /** 预览防抖（毫秒）。 */
 const PREVIEW_DEBOUNCE_MS = 300;
@@ -176,14 +183,19 @@ function serialize(): string {
 }
 
 /**
- * 把异常翻译成一句人话。
+ * 把服务端返回的记录写回本地状态。
  *
- * @param error 捕获到的异常。
- * @param fallback 兜底文案。
- * @returns 展示用文案。
+ * 保存 / 发布 / 取消发布共用的收尾：刷新乐观锁基准、状态、保存时间，
+ * 并作废公开侧缓存（否则点预览还是旧内容）。**不动** `baseline` ——
+ * 只有真正保存内容时才重建脏检查基线，取消发布不该把未保存的改动"洗白"。
+ *
+ * @param record 写接口返回的最新记录。
  */
-function describe(error: unknown, fallback: string): string {
-  return error instanceof ApiRequestError ? error.message : fallback;
+function applyRecord(record: PostRecord): void {
+  expectedUpdatedAt.value = record.updatedAt;
+  status.value = record.status;
+  lastSavedAt.value = record.updatedAt;
+  content.invalidate();
 }
 
 /** 重算预览（防抖）。 */
@@ -273,11 +285,8 @@ async function save(silent = false): Promise<boolean> {
     if (isNew.value) {
       const record = await createAdminPost(buildInput());
       slug.value = record.slug;
-      expectedUpdatedAt.value = record.updatedAt;
-      status.value = record.status;
-      lastSavedAt.value = record.updatedAt;
+      applyRecord(record);
       baseline.value = serialize();
-      content.invalidate();
       // 新建完成后把地址换成编辑态：刷新页面不会又变成一张空表单。
       selfNavigating.value = true;
       await router.replace({ name: 'admin-post-edit', params: { slug: record.slug } });
@@ -291,11 +300,8 @@ async function save(silent = false): Promise<boolean> {
       ...buildInput(),
       expectedUpdatedAt: expectedUpdatedAt.value ?? '',
     });
-    expectedUpdatedAt.value = record.updatedAt;
-    status.value = record.status;
-    lastSavedAt.value = record.updatedAt;
+    applyRecord(record);
     baseline.value = serialize();
-    content.invalidate();
     if (!silent) {
       message.success('已保存');
     }
@@ -312,7 +318,7 @@ async function save(silent = false): Promise<boolean> {
     if (silent) {
       autosaveFailed.value = true;
     } else {
-      message.error(describe(error, '保存失败'));
+      message.error(describeError(error, '保存失败'));
     }
     return false;
   } finally {
@@ -354,13 +360,10 @@ async function publish(): Promise<void> {
   publishing.value = true;
   try {
     const record = await publishAdminPost(slug.value);
-    status.value = record.status;
-    expectedUpdatedAt.value = record.updatedAt;
-    lastSavedAt.value = record.updatedAt;
-    content.invalidate();
+    applyRecord(record);
     message.success('已发布，需触发全量重建后对外可见');
   } catch (error) {
-    message.error(describe(error, '发布失败'));
+    message.error(describeError(error, '发布失败'));
   } finally {
     publishing.value = false;
   }
@@ -374,13 +377,10 @@ async function unpublish(): Promise<void> {
   publishing.value = true;
   try {
     const record = await unpublishAdminPost(slug.value);
-    status.value = record.status;
-    expectedUpdatedAt.value = record.updatedAt;
-    lastSavedAt.value = record.updatedAt;
-    content.invalidate();
+    applyRecord(record);
     message.success('已取消发布，转回草稿');
   } catch (error) {
-    message.error(describe(error, '操作失败'));
+    message.error(describeError(error, '操作失败'));
   } finally {
     publishing.value = false;
   }
@@ -393,18 +393,10 @@ async function pullLatest(): Promise<void> {
   }
   try {
     const detail = await getAdminPost(slug.value);
-    applyDetail(
-      detail.title,
-      detail.slug,
-      detail.summary,
-      detail.contentMd,
-      detail.tags.map((tag) => tag.slug),
-      detail.updatedAt,
-      detail.status,
-    );
+    applyDetail(detail);
     message.success('已拉取最新版本');
   } catch (error) {
-    message.error(describe(error, '拉取失败'));
+    message.error(describeError(error, '拉取失败'));
   } finally {
     conflictOpen.value = false;
   }
@@ -422,39 +414,25 @@ async function forceOverwrite(): Promise<void> {
     await save();
   } catch (error) {
     conflictOpen.value = false;
-    message.error(describe(error, '覆盖失败'));
+    message.error(describeError(error, '覆盖失败'));
   }
 }
 
 /**
  * 把服务端详情灌进表单。
  *
- * @param nextTitle 标题。
- * @param nextSlug slug。
- * @param nextSummary 摘要。
- * @param nextContent 正文。
- * @param nextTags 标签 slug 列表。
- * @param nextUpdatedAt 更新时间（乐观锁基准）。
- * @param nextStatus 状态。
+ * @param detail 文章详情（标签在内部摊成 slug 列表）。
  */
-function applyDetail(
-  nextTitle: string,
-  nextSlug: string,
-  nextSummary: string,
-  nextContent: string,
-  nextTags: readonly string[],
-  nextUpdatedAt: string,
-  nextStatus: PostStatus,
-): void {
-  form.title = nextTitle;
-  form.slug = nextSlug;
-  form.summary = nextSummary;
-  form.contentMd = nextContent;
-  form.tagSlugs = [...nextTags];
-  slug.value = nextSlug;
-  expectedUpdatedAt.value = nextUpdatedAt;
-  status.value = nextStatus;
-  lastSavedAt.value = nextUpdatedAt;
+function applyDetail(detail: AdminPostDetail): void {
+  form.title = detail.title;
+  form.slug = detail.slug;
+  form.summary = detail.summary;
+  form.contentMd = detail.contentMd;
+  form.tagSlugs = detail.tags.map((tag) => tag.slug);
+  slug.value = detail.slug;
+  expectedUpdatedAt.value = detail.updatedAt;
+  status.value = detail.status;
+  lastSavedAt.value = detail.updatedAt;
   baseline.value = serialize();
   autosaveFailed.value = false;
   schedulePreview();
@@ -506,7 +484,7 @@ async function uploadFiles(files: readonly File[]): Promise<void> {
         `![${alt}](${result.url})`,
       );
     } catch (error) {
-      const reason = error instanceof ApiRequestError ? error.message : '上传失败';
+      const reason = describeError(error, '上传失败');
       form.contentMd = form.contentMd.replace(
         `![上传中…](${marker})`,
         `> ⚠️ 图片上传失败（${file.name}）：${reason}`,
@@ -648,17 +626,9 @@ onMounted(async () => {
   } else {
     try {
       const detail = await getAdminPost(routeSlug);
-      applyDetail(
-        detail.title,
-        detail.slug,
-        detail.summary,
-        detail.contentMd,
-        detail.tags.map((tag) => tag.slug),
-        detail.updatedAt,
-        detail.status,
-      );
+      applyDetail(detail);
     } catch (error) {
-      message.error(describe(error, '文章加载失败'));
+      message.error(describeError(error, '文章加载失败'));
       selfNavigating.value = true;
       await router.replace({ name: 'admin-posts' });
       return;
@@ -765,7 +735,7 @@ onBeforeUnmount(() => {
                 <input
                   ref="filePickerEl"
                   type="file"
-                  accept="image/png,image/jpeg,image/gif,image/webp"
+                  :accept="UPLOAD_ACCEPT"
                   multiple
                   hidden
                   @change="onPickImage"
@@ -825,7 +795,7 @@ onBeforeUnmount(() => {
 .ed {
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - 78px);
+  min-height: calc(100vh - var(--header-height));
   background: var(--color-bg);
 }
 

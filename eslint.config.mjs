@@ -15,6 +15,8 @@ export default tseslint.config(
       '**/dist/**',
       '**/dist-next/**',
       '**/dist-prev/**',
+      // vite-ssg 的临时产物（每次构建生成，`.gitignore` 已忽略）：不是源码。
+      '**/.vite-ssg-temp/**',
       '**/coverage/**',
       '**/var/**',
       '**/*.d.ts',

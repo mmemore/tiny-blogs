@@ -130,7 +130,7 @@
   line-height: 1.6;
   letter-spacing: -0.02em;
   color: var(--color-ink);
-  scroll-margin-top: 96px;
+  scroll-margin-top: var(--anchor-offset);
 }
 
 .prose h3 {
@@ -140,7 +140,7 @@
   line-height: 1.7;
   letter-spacing: -0.01em;
   color: var(--color-ink);
-  scroll-margin-top: 96px;
+  scroll-margin-top: var(--anchor-offset);
 }
 
 .prose blockquote {
@@ -381,7 +381,7 @@
   grid-column: 10 / 13;
   align-self: start;
   position: sticky;
-  top: 96px;
+  top: var(--anchor-offset);
 }
 
 .toc h4 {
@@ -529,37 +529,6 @@
   color: var(--color-accent-dark);
 }
 
-/* ---------- 页脚的小字条（留言位上方） ---------- */
-.letter {
-  display: flex;
-  align-items: baseline;
-  gap: 16px;
-  margin: 30px 56px 0;
-  padding-top: 16px;
-  border-top: 1px solid var(--color-line);
-  font-size: 12.5px;
-  color: var(--color-faint);
-  flex-wrap: wrap;
-}
-
-.letter a {
-  color: var(--color-dim);
-  border-bottom: 2px solid var(--color-mark);
-  padding-bottom: 1px;
-}
-
-.letter a:hover {
-  color: var(--color-accent-dark);
-  border-color: var(--color-accent);
-}
-
-.letter .sp {
-  margin-left: auto;
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  letter-spacing: 0.12em;
-}
-
 /* ---------- 留言位（Giscus） ---------- */
 /* 配置为空时整块不渲染（见 GiscusComments.vue），因此这里不需要"隐藏态"样式。 */
 .giscus {
@@ -633,10 +602,6 @@
     border-left: 0;
     padding-left: 0;
     border-top: 1px solid var(--color-line);
-  }
-
-  .letter {
-    margin: 24px 24px 0;
   }
 
   .giscus {

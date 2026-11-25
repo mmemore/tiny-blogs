@@ -89,7 +89,7 @@ async function submit(): Promise<void> {
       <div class="lg-card">
         <div class="stamp" aria-hidden="true">STAFF<small>ONLY</small></div>
         <div class="sk">BACKSTAGE · 后台入口</div>
-        <h1>员工<span class="mk">通道</span></h1>
+        <h1>员工<span class="mk-band">通道</span></h1>
 
         <NForm :model="form" :rules="rules" :show-require-mark="false" @submit.prevent="submit">
           <div class="lg-field">
@@ -208,7 +208,8 @@ h1 {
   color: var(--color-ink);
 }
 
-.mk {
+/* 与 base.css 的 `.mk`（细下划线）不同：登录页标题用的是「整段压黄」的色块。 */
+.mk-band {
   background: linear-gradient(transparent 58%, var(--color-mark) 58%, var(--color-mark) 92%, transparent 92%);
   padding: 0 2px;
 }

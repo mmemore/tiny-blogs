@@ -1,4 +1,5 @@
 import type { DataSource } from 'typeorm';
+import { isDuplicateEntry } from '../common/db-errors';
 import { hashPassword } from '../common/password';
 
 /** 种子结果：新建 / 已存在（幂等）。 */
@@ -42,26 +43,11 @@ export async function ensureAdminUser(
     );
   } catch (error) {
     // 多进程同时启动时可能撞 username 唯一索引：视为已存在，不算启动失败。
-    if (isDuplicateEntryError(error)) {
+    if (isDuplicateEntry(error)) {
       return 'existing';
     }
     throw error;
   }
 
   return 'created';
-}
-
-/**
- * 判断是否为 MySQL 唯一键冲突（`ER_DUP_ENTRY`）。
- *
- * @param error 捕获到的异常。
- * @returns 命中重复键返回 true。
- */
-function isDuplicateEntryError(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    (error as { code?: unknown }).code === 'ER_DUP_ENTRY'
-  );
 }

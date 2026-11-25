@@ -14,7 +14,7 @@
 import type { RouteRecordRaw } from 'vue-router';
 
 /** 不依赖任何内容的静态公开页。 */
-export const PRERENDER_STATIC_PATHS: readonly string[] = ['/', '/posts', '/tags', '/archives', '/about'];
+const PRERENDER_STATIC_PATHS: readonly string[] = ['/', '/posts', '/tags', '/archives', '/about'];
 
 /**
  * 从进程环境读一个逗号分隔的 slug 清单。

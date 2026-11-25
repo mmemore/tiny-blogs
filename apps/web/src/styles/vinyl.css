@@ -857,10 +857,6 @@ a.sleeve:hover {
   .about-r {
     max-width: 340px;
   }
-
-  .creds {
-    margin-top: 26px;
-  }
 }
 
 @media (max-width: 560px) {

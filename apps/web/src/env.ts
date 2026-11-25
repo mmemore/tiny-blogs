@@ -12,8 +12,6 @@ export interface GiscusConfig {
 }
 
 export interface WebEnv {
-  /** 站点对外地址，用于 OG/规范链接（预渲染期即需要）。 */
-  readonly siteUrl: string;
   /** 评论占位配置；四项任一为空则不渲染（v1 默认不渲染）。 */
   readonly giscus: GiscusConfig;
 }
@@ -26,7 +24,6 @@ export interface WebEnv {
  */
 export function readWebEnv(source: ImportMetaEnv = import.meta.env): WebEnv {
   return {
-    siteUrl: source.VITE_SITE_URL ?? 'http://localhost:5173',
     giscus: {
       repo: source.VITE_GISCUS_REPO ?? '',
       repoId: source.VITE_GISCUS_REPO_ID ?? '',

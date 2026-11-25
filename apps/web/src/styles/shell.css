@@ -367,8 +367,7 @@ body:has(.bigmark) .s-foot {
   flex-wrap: wrap;
 }
 
-.pager a,
-.pager span.pg {
+.pager a {
   min-width: 32px;
   height: 32px;
   display: inline-flex;
@@ -385,8 +384,7 @@ body:has(.bigmark) .s-foot {
   box-shadow: 2px 2px 0 var(--color-ink);
 }
 
-.pager a.on,
-.pager span.pg.on {
+.pager a.on {
   background: var(--color-accent-dark);
   border-color: var(--color-ink);
   color: #fff;

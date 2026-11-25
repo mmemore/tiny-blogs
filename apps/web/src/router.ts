@@ -28,6 +28,23 @@ import PostListView from './views/PostListView.vue';
 import TagsView from './views/TagsView.vue';
 import { useSessionStore } from './stores/auth';
 
+/**
+ * 锚点滚动的顶部留白。
+ *
+ * 数值的唯一来源是 `styles/tokens.css` 的 `--anchor-offset`（与 `prose.css` 的
+ * `scroll-margin-top` 共用）；这里的 `96` 只是样式表尚未加载时的兜底。
+ *
+ * @returns 像素值。
+ */
+function anchorOffset(): number {
+  if (typeof document === 'undefined') {
+    return 0;
+  }
+  const raw = getComputedStyle(document.documentElement).getPropertyValue('--anchor-offset');
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isNaN(parsed) ? 96 : parsed;
+}
+
 /** 登录页路由名（守卫与"会话失效"跳转共用，避免到处写字面量）。 */
 export const LOGIN_ROUTE = 'admin-login';
 
@@ -122,7 +139,7 @@ export function createAppRouter(history?: ReturnType<typeof createWebHistory>): 
         return savedPosition;
       }
       if (to.hash !== '') {
-        return { el: to.hash, top: 96, behavior: 'smooth' };
+        return { el: to.hash, top: anchorOffset(), behavior: 'smooth' };
       }
       return { top: 0 };
     },

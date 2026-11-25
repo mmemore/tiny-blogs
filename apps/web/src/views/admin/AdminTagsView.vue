@@ -19,7 +19,7 @@ import {
   listAdminTags,
   updateAdminTag,
 } from '../../api/admin';
-import { ApiRequestError } from '../../api/client';
+import { describeError } from '../../lib/errors';
 import { useContentStore } from '../../stores/content';
 
 const message = useMessage();
@@ -41,24 +41,13 @@ const editing = ref<{ slug: string; name: string; slugValue: string } | null>(nu
 /** 写操作进行中。 */
 const busy = ref(false);
 
-/**
- * 把异常翻译成一句人话。
- *
- * @param error 捕获到的异常。
- * @param fallback 兜底文案。
- * @returns 展示用文案。
- */
-function describe(error: unknown, fallback: string): string {
-  return error instanceof ApiRequestError ? error.message : fallback;
-}
-
 /** 拉标签列表。 */
 async function load(): Promise<void> {
   loading.value = true;
   try {
     tags.value = await listAdminTags();
   } catch (error) {
-    message.error(describe(error, '标签加载失败'));
+    message.error(describeError(error, '标签加载失败'));
   } finally {
     loading.value = false;
   }
@@ -84,7 +73,7 @@ async function create(): Promise<void> {
     await load();
     message.success('已新建标签');
   } catch (error) {
-    message.error(describe(error, '新建失败'));
+    message.error(describeError(error, '新建失败'));
   } finally {
     busy.value = false;
   }
@@ -120,7 +109,7 @@ async function commitEdit(): Promise<void> {
     await load();
     message.success('已保存');
   } catch (error) {
-    message.error(describe(error, '保存失败'));
+    message.error(describeError(error, '保存失败'));
   } finally {
     busy.value = false;
   }
@@ -145,7 +134,7 @@ function confirmRemove(tag: TagRef): void {
         await load();
         message.success('已删除');
       } catch (error) {
-        message.error(describe(error, '删除失败'));
+        message.error(describeError(error, '删除失败'));
       } finally {
         busy.value = false;
       }
@@ -158,7 +147,7 @@ onMounted(load);
 
 <template>
   <div class="adm-tags">
-    <div class="bar">
+    <div class="adm-bar">
       <NInput v-model:value="draft.name" placeholder="标签名，如 Vue" class="w-name" @keydown.enter="create" />
       <NInput
         v-model:value="draft.slug"
@@ -167,17 +156,17 @@ onMounted(load);
         @keydown.enter="create"
       />
       <NButton type="primary" :loading="busy" @click="create">＋ 新建标签</NButton>
-      <span class="sp" />
+      <span class="adm-sp" />
       <span class="total">共 {{ tags.length }} 个</span>
     </div>
 
-    <div class="n-card">
-      <table class="n-table">
+    <div class="adm-card">
+      <table class="adm-table">
         <thead>
           <tr>
             <th class="c-name">名称</th>
             <th>slug</th>
-            <th class="c-act">操作</th>
+            <th class="adm-col-act">操作</th>
           </tr>
         </thead>
         <tbody>
@@ -194,7 +183,7 @@ onMounted(load);
               </template>
               <template v-else>{{ tag.slug }}</template>
             </td>
-            <td class="act">
+            <td class="adm-act">
               <template v-if="editing !== null && editing.slug === tag.slug">
                 <button type="button" :disabled="busy" @click="commitEdit">保存</button>
                 <button type="button" :disabled="busy" @click="cancelEdit">取消</button>
@@ -206,7 +195,7 @@ onMounted(load);
             </td>
           </tr>
           <tr v-if="tags.length === 0 && !loading">
-            <td colspan="3" class="empty">还没有标签。上面填好名称与 slug 就能建第一个。</td>
+            <td colspan="3" class="adm-empty">还没有标签。上面填好名称与 slug 就能建第一个。</td>
           </tr>
         </tbody>
       </table>
@@ -217,13 +206,6 @@ onMounted(load);
 </template>
 
 <style scoped>
-.bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
 .w-name {
   width: 220px;
   --n-height: 34px;
@@ -234,66 +216,23 @@ onMounted(load);
   --n-height: 34px;
 }
 
-.sp {
-  margin-left: auto;
-}
-
 .total {
   color: var(--color-faint);
   font-family: var(--font-mono);
   font-size: 11px;
 }
 
-.n-card {
-  margin-top: 16px;
-  background: var(--color-paper);
-  border: 1px solid var(--color-line);
-  border-radius: 6px;
-  overflow-x: auto;
-}
-
-.n-table {
-  width: 100%;
+/* 公共表格件在 styles/admin.css；这里只声明本页列宽与独有元素。 */
+.adm-table {
   min-width: 520px;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.n-table th {
-  padding: 11px 16px;
-  border-bottom: 1px solid var(--color-line);
-  background: var(--color-bg);
-  color: var(--color-faint);
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  font-weight: 400;
-  letter-spacing: 0.14em;
-  text-align: left;
-  text-transform: uppercase;
-}
-
-.n-table td {
-  padding: 11px 16px;
-  border-bottom: 1px solid var(--color-line);
-  color: var(--color-body);
-}
-
-.n-table tbody tr:last-child td {
-  border-bottom: 0;
 }
 
 .c-name {
   width: 40%;
 }
 
-.c-act {
-  text-align: right;
+.adm-col-act {
   width: 140px;
-}
-
-/* 同 AdminPostsView：表头右对齐的规则特异度必须高过 `.n-table th`，否则表头与按钮错位。 */
-.n-table th.c-act {
-  text-align: right;
 }
 
 .name {
@@ -304,46 +243,6 @@ onMounted(load);
 .slug {
   color: var(--color-dim);
   font-family: var(--font-mono);
-  font-size: 11.5px;
-}
-
-.act {
-  text-align: right;
-  white-space: nowrap;
-}
-
-.act button {
-  margin-left: 12px;
-  border: 0;
-  background: none;
-  color: var(--color-dim);
-  font-size: 12.5px;
-  cursor: pointer;
-}
-
-.act button:hover {
-  color: var(--color-accent-dark);
-}
-
-.act button.del:hover {
-  text-decoration: underline;
-}
-
-.act button:disabled {
-  color: var(--color-faint);
-  cursor: not-allowed;
-}
-
-.empty {
-  padding: 30px 16px;
-  color: var(--color-faint);
-  font-size: 12.5px;
-  text-align: center;
-}
-
-.adm-note {
-  margin-top: 12px;
-  color: var(--color-faint);
   font-size: 11.5px;
 }
 </style>
